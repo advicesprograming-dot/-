@@ -123,36 +123,20 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             }
 
             AlarmScheduler.ACTION_SALAWAT -> {
+                // 1. Immediately start Foreground Service to guarantee audio playback on all devices (including Samsung in deep sleep)
+                com.example.service.SalawatAudioService.start(context)
+
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
                         val db = PrayerApplication.instance.database
                         val settings = db.settingsDao().getSettingsDirect() ?: AppSettingsEntity()
 
                         if (settings.salawatEnabled) {
-                            NotificationHelper.showSalawatNotification(context)
-
-                            // Play audio according to selected mode
-                            val audioFiles = ZipExtractor.getExtractedFiles(context, "salawat_audios")
-                            if (audioFiles.isNotEmpty()) {
-                                val fileToPlay: File = when (settings.salawatSelectionMode) {
-                                    "RANDOM" -> audioFiles[Random.nextInt(audioFiles.size)]
-                                    "SPECIFIC" -> {
-                                        val idx = settings.salawatSpecificSoundIndex.coerceIn(0, audioFiles.size - 1)
-                                        audioFiles[idx]
-                                    }
-                                    else -> { // "ORDER"
-                                        val nextIdx = (settings.salawatLastPlayedIndex + 1) % audioFiles.size
-                                        db.settingsDao().insertOrUpdate(settings.copy(salawatLastPlayedIndex = nextIdx))
-                                        audioFiles[nextIdx]
-                                    }
-                                }
-                                AudioPlayerHelper.playAudioUri(context, fileToPlay.absolutePath)
-                            } else {
-                                AudioPlayerHelper.playSynthesizedChime()
-                            }
-
-                            // Schedule next recurring salawat alarm
-                            AlarmScheduler.scheduleSalawat(context, settings)
+                            // Reschedule next recurring salawat alarm with forceReset so target timestamp is fresh
+                            val intervalMillis = settings.salawatIntervalMinutes.coerceAtLeast(1) * 60 * 1000L
+                            val nextTimestamp = System.currentTimeMillis() + intervalMillis
+                            db.settingsDao().insertOrUpdate(settings.copy(nextSalawatTimestamp = nextTimestamp))
+                            AlarmScheduler.scheduleSalawat(context, settings.copy(nextSalawatTimestamp = nextTimestamp), forceReset = true)
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()

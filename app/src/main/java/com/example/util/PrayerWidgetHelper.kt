@@ -87,6 +87,16 @@ object PrayerWidgetHelper {
         return Pair(current, next)
     }
 
+    fun getSafeNextSalawatTime(settings: AppSettingsEntity): Long {
+        val now = System.currentTimeMillis()
+        val intervalMs = settings.salawatIntervalMinutes.coerceAtLeast(1) * 60 * 1000L
+        var nextTime = settings.nextSalawatTimestamp
+        if (nextTime <= now) {
+            nextTime = now + intervalMs
+        }
+        return nextTime
+    }
+
     fun buildWidgetRemoteViews(context: Context, settings: AppSettingsEntity): RemoteViews {
         val layoutId = when (settings.widgetThemeStyle) {
             "BURGUNDY" -> R.layout.widget_prayer_times_burgundy
@@ -159,9 +169,11 @@ object PrayerWidgetHelper {
         else if (schedule.isha.id == nextPrayer.id) views.setTextViewText(R.id.tv_col_isha_badge, "القادمة")
 
         // Salawat bottom bar
-        if (settings.salawatEnabled && settings.nextSalawatTimestamp > 0) {
+        if (settings.salawatEnabled) {
             views.setViewVisibility(R.id.layout_widget_salawat, View.VISIBLE)
-            val salawatRemaining = (settings.nextSalawatTimestamp - System.currentTimeMillis()).coerceAtLeast(0L)
+            val now = System.currentTimeMillis()
+            val nextSalawat = getSafeNextSalawatTime(settings)
+            val salawatRemaining = (nextSalawat - now).coerceAtLeast(0L)
             val salawatBaseRealtime = SystemClock.elapsedRealtime() + salawatRemaining
 
             if (settings.widgetShowSeconds) {
@@ -209,12 +221,7 @@ object PrayerWidgetHelper {
         val views = RemoteViews(context.packageName, R.layout.widget_salawat)
 
         val now = System.currentTimeMillis()
-        val intervalMs = (settings.salawatIntervalMinutes) * 60 * 1000L
-        var nextTime = settings.nextSalawatTimestamp
-        if (nextTime <= now) {
-            nextTime = now + intervalMs 
-        }
-
+        val nextTime = getSafeNextSalawatTime(settings)
         val diffMs = (nextTime - now).coerceAtLeast(0L)
         val baseTime = android.os.SystemClock.elapsedRealtime() + diffMs
 
@@ -327,9 +334,11 @@ object PrayerWidgetHelper {
         views.setTextViewText(R.id.tv_strip_time_isha, formatClockTime(schedule.isha.hour24, schedule.isha.minute, is24))
 
         // Salawat Mini Bar
-        if (settings.salawatEnabled && settings.nextSalawatTimestamp > 0) {
+        if (settings.salawatEnabled) {
             views.setViewVisibility(R.id.layout_strip_salawat, View.VISIBLE)
-            val salRemaining = (settings.nextSalawatTimestamp - System.currentTimeMillis()).coerceAtLeast(0L)
+            val now = System.currentTimeMillis()
+            val nextSalawat = getSafeNextSalawatTime(settings)
+            val salRemaining = (nextSalawat - now).coerceAtLeast(0L)
             val salBase = SystemClock.elapsedRealtime() + salRemaining
             views.setChronometer(R.id.chronometer_strip_salawat, salBase, null, true)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -443,9 +452,11 @@ object PrayerWidgetHelper {
         views.setTextColor(R.id.tv_notif_time_isha, if (nextPrayer.id == schedule.isha.id) goldColor else whiteColor)
 
         // Salawat Row in Notification Bar
-        if (settings.salawatEnabled && settings.notificationBarShowSalawat && settings.nextSalawatTimestamp > 0) {
+        if (settings.salawatEnabled && settings.notificationBarShowSalawat) {
             views.setViewVisibility(R.id.layout_notif_salawat, View.VISIBLE)
-            val salawatRemaining = (settings.nextSalawatTimestamp - System.currentTimeMillis()).coerceAtLeast(0L)
+            val now = System.currentTimeMillis()
+            val nextSalawat = getSafeNextSalawatTime(settings)
+            val salawatRemaining = (nextSalawat - now).coerceAtLeast(0L)
             val salawatBaseRealtime = SystemClock.elapsedRealtime() + salawatRemaining
 
             if (settings.notificationBarShowSeconds) {
@@ -483,35 +494,12 @@ object PrayerWidgetHelper {
     }
 
     fun playSalawatDirectly(context: Context) {
+        com.example.service.SalawatAudioService.start(context)
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val db = PrayerApplication.instance.database
                 val s = db.settingsDao().getSettingsDirect() ?: AppSettingsEntity()
-                val files = ZipExtractor.getExtractedFiles(context, "salawat_audios")
-
-                if (files.isNotEmpty()) {
-                    val fileToPlay = when (s.salawatSelectionMode) {
-                        "RANDOM" -> files.random()
-                        "SPECIFIC" -> files[s.salawatSpecificSoundIndex.coerceIn(0, files.size - 1)]
-                        else -> {
-                            val nextIdx = (s.salawatLastPlayedIndex + 1) % files.size
-                            db.settingsDao().insertOrUpdate(s.copy(salawatLastPlayedIndex = nextIdx))
-                            files[nextIdx]
-                        }
-                    }
-                    AudioPlayerHelper.playAudioUri(context, fileToPlay.absolutePath)
-                } else {
-                    AudioPlayerHelper.playSynthesizedChime()
-                }
-
-                // Reset timer for next interval
-                val nextTimestamp = System.currentTimeMillis() + (s.salawatIntervalMinutes * 60 * 1000L)
-                db.settingsDao().insertOrUpdate(s.copy(nextSalawatTimestamp = nextTimestamp))
-                AlarmScheduler.scheduleSalawat(context, s.copy(nextSalawatTimestamp = nextTimestamp))
-
-                // Update widgets and notification
-                updateAllWidgets(context)
-                NotificationHelper.updateOngoingPrayerNotification(context)
+                AlarmScheduler.scheduleSalawat(context, s, forceReset = true)
             } catch (e: Exception) {
                 e.printStackTrace()
             }

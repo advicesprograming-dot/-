@@ -29,7 +29,70 @@ data class PrayerSchedule(
     val isFriday: Boolean
 )
 
+data class CityPreset(
+    val nameAr: String,
+    val nameEn: String,
+    val lat: Double,
+    val lng: Double,
+    val tz: String,
+    val method: String
+)
+
 object PrayerTimesCalculator {
+
+    val PRESET_CITIES = listOf(
+        CityPreset("مكة المكرمة", "Makkah", 21.4225, 39.8262, "Asia/Riyadh", "UMM_AL_QURA"),
+        CityPreset("المدينة المنورة", "Madinah", 24.4672, 39.6111, "Asia/Riyadh", "UMM_AL_QURA"),
+        CityPreset("الرياض", "Riyadh", 24.7136, 46.6753, "Asia/Riyadh", "UMM_AL_QURA"),
+        CityPreset("جدة", "Jeddah", 21.5433, 39.1728, "Asia/Riyadh", "UMM_AL_QURA"),
+        CityPreset("القاهرة", "Cairo", 30.0444, 31.2357, "Africa/Cairo", "EGYPT"),
+        CityPreset("الإسكندرية", "Alexandria", 31.2001, 29.9187, "Africa/Cairo", "EGYPT"),
+        CityPreset("الجيزة", "Giza", 30.0131, 31.2089, "Africa/Cairo", "EGYPT"),
+        CityPreset("المنصورة", "Mansoura", 31.0409, 31.3785, "Africa/Cairo", "EGYPT"),
+        CityPreset("طنطا", "Tanta", 30.7865, 31.0004, "Africa/Cairo", "EGYPT"),
+        CityPreset("أسيوط", "Asyut", 27.1801, 31.1837, "Africa/Cairo", "EGYPT"),
+        CityPreset("أسوان", "Aswan", 24.0889, 32.8998, "Africa/Cairo", "EGYPT"),
+        CityPreset("دبي", "Dubai", 25.2048, 55.2708, "Asia/Dubai", "DUBAI"),
+        CityPreset("أبوظبي", "Abu Dhabi", 24.4539, 54.3773, "Asia/Dubai", "DUBAI"),
+        CityPreset("الدوحة", "Doha", 25.2854, 51.5310, "Asia/Qatar", "QATAR"),
+        CityPreset("الكويت", "Kuwait City", 29.3759, 47.9774, "Asia/Kuwait", "KUWAIT"),
+        CityPreset("المنامة", "Manama", 26.2285, 50.5860, "Asia/Bahrain", "UMM_AL_QURA"),
+        CityPreset("مسقط", "Muscat", 23.5880, 58.3829, "Asia/Muscat", "MWL"),
+        CityPreset("القدس الشريف", "Jerusalem", 31.7683, 35.2137, "Asia/Jerusalem", "MWL"),
+        CityPreset("عمان", "Amman", 31.9454, 35.9284, "Asia/Amman", "MWL"),
+        CityPreset("بغداد", "Baghdad", 33.3152, 44.3661, "Asia/Baghdad", "MWL"),
+        CityPreset("دمشق", "Damascus", 33.5138, 36.2765, "Asia/Damascus", "MWL"),
+        CityPreset("بيروت", "Beirut", 33.8938, 35.5018, "Asia/Beirut", "MWL"),
+        CityPreset("صنعاء", "Sanaa", 15.3694, 44.1910, "Asia/Aden", "UMM_AL_QURA"),
+        CityPreset("طرابلس", "Tripoli", 32.8872, 13.1913, "Africa/Tripoli", "MWL"),
+        CityPreset("تونس", "Tunis", 36.8065, 10.1815, "Africa/Tunis", "MWL"),
+        CityPreset("الجزائر", "Algiers", 36.7538, 3.0588, "Africa/Algiers", "MWL"),
+        CityPreset("الرباط", "Rabat", 34.0209, -6.8416, "Africa/Casablanca", "MWL"),
+        CityPreset("الدار البيضاء", "Casablanca", 33.5731, -7.5898, "Africa/Casablanca", "MWL"),
+        CityPreset("الخرطوم", "Khartoum", 15.5007, 32.5599, "Africa/Khartoum", "EGYPT"),
+        CityPreset("إسطنبول", "Istanbul", 41.0082, 28.9784, "Europe/Istanbul", "DIYANET"),
+        CityPreset("أنقرة", "Ankara", 39.9334, 32.8597, "Europe/Istanbul", "DIYANET"),
+        CityPreset("كراتشي", "Karachi", 24.8607, 67.0011, "Asia/Karachi", "KARACHI"),
+        CityPreset("لاهور", "Lahore", 31.5204, 74.3587, "Asia/Karachi", "KARACHI"),
+        CityPreset("إسلام آباد", "Islamabad", 33.6844, 73.0479, "Asia/Karachi", "KARACHI"),
+        CityPreset("جاكرتا", "Jakarta", -6.2088, 106.8456, "Asia/Jakarta", "MWL"),
+        CityPreset("كوالالمبور", "Kuala Lumpur", 3.1390, 101.6869, "Asia/Kuala_Lumpur", "MWL"),
+        CityPreset("لندن", "London", 51.5074, -0.1278, "Europe/London", "MWL"),
+        CityPreset("باريس", "Paris", 48.8566, 2.3522, "Europe/Paris", "FRANCE"),
+        CityPreset("برلين", "Berlin", 52.5200, 13.4050, "Europe/Berlin", "MWL"),
+        CityPreset("موسكو", "Moscow", 55.7558, 37.6173, "Europe/Moscow", "RUSSIA"),
+        CityPreset("نيويورك", "New York", 40.7128, -74.0060, "America/New_York", "ISNA"),
+        CityPreset("تورونتو", "Toronto", 43.6532, -79.3832, "America/Toronto", "ISNA"),
+        CityPreset("سيدني", "Sydney", -33.8688, 151.2093, "Australia/Sydney", "MWL")
+    )
+
+    fun findClosestPreset(lat: Double, lng: Double): CityPreset? {
+        return PRESET_CITIES.minByOrNull { preset ->
+            val dLat = preset.lat - lat
+            val dLng = preset.lng - lng
+            dLat * dLat + dLng * dLng
+        }
+    }
 
     enum class CalculationMethod(
         val code: String,
@@ -75,76 +138,78 @@ object PrayerTimesCalculator {
     }
 
     fun calculateTimes(date: Date, settings: AppSettingsEntity): PrayerSchedule {
-        val cal = Calendar.getInstance(TimeZone.getTimeZone(settings.timezoneId))
+        val tzId = if (settings.timezoneId.isNotBlank()) settings.timezoneId else TimeZone.getDefault().id
+        val cal = Calendar.getInstance(TimeZone.getTimeZone(tzId))
         cal.time = date
 
         val year = cal.get(Calendar.YEAR)
         val month = cal.get(Calendar.MONTH) + 1
         val day = cal.get(Calendar.DAY_OF_MONTH)
-        val dayOfYear = cal.get(Calendar.DAY_OF_YEAR)
         val isFriday = cal.get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY
 
         val lat = settings.latitude
         val lng = settings.longitude
-        val tz = getTimeZoneOffsetHours(settings.timezoneId, date, settings.dstMode)
+        val tz = getTimeZoneOffsetHours(tzId, date, settings.dstMode)
 
         val method = CalculationMethod.fromCode(settings.calcMethod)
         val madhab = AsrMadhab.fromCode(settings.asrMadhab)
 
-        // NOAA Solar Calculation Algorithm (Extremely High Precision)
-        // Fractional year gamma in radians
-        val gamma = 2.0 * Math.PI / 365.0 * (dayOfYear - 1)
+        // Astronomical High-Precision Ephemeris (Jean Meeus algorithm)
+        // 1. Julian Date
+        val jd = julianDate(year, month, day)
+        val d = jd - 2451545.0
 
-        // Equation of Time in minutes
-        val eqtMinutes = 229.18 * (0.000075 +
-                0.001868 * cos(gamma) - 0.032077 * sin(gamma) -
-                0.014615 * cos(2.0 * gamma) - 0.040849 * sin(2.0 * gamma))
-        val eqtHours = eqtMinutes / 60.0
+        // 2. Solar Position
+        val g = fixAngle(357.529 + 0.98560028 * d)
+        val q = fixAngle(280.459 + 0.98564736 * d)
+        val l = fixAngle(q + 1.915 * dsin(g) + 0.020 * dsin(2.0 * g))
 
-        // Sun Declination in radians
-        val declRad = 0.006918 -
-                0.399912 * cos(gamma) + 0.070257 * sin(gamma) -
-                0.006758 * cos(2.0 * gamma) + 0.000907 * sin(2.0 * gamma) -
-                0.002697 * cos(3.0 * gamma) + 0.000148 * sin(3.0 * gamma)
-        val declDeg = r2d(declRad)
+        val e = 23.439 - 0.00000036 * d
+        val declDeg = darcsin(dsin(e) * dsin(l))
+        val raHours = fixAngle(darctan2(dcos(e) * dsin(l), dcos(l))) / 15.0
 
-        // Dhuhr (Solar Noon) time in hours (local standard time)
-        val dhuhrBase = 12.0 + tz - (lng / 15.0) - eqtHours
+        // 3. Equation of Time in hours
+        var eqt = (q / 15.0) - raHours
+        if (eqt > 12.0) eqt -= 24.0
+        if (eqt < -12.0) eqt += 24.0
 
-        // Helper function for sun angle time
+        // 4. Solar Noon / Zawal
+        val noon = 12.0 + tz - (lng / 15.0) - eqt
+        val dhuhrBase = noon + (1.0 / 60.0) // +1 minute precaution after solar noon for sun to pass meridian
+
         fun sunAngleTime(angleDeg: Double): Double {
-            val cosH = (cos(d2r(90.0 + angleDeg)) - sin(d2r(lat)) * sin(d2r(declDeg))) /
-                    (cos(d2r(lat)) * cos(d2r(declDeg)))
+            val cosH = (-dsin(angleDeg) - dsin(lat) * dsin(declDeg)) / (dcos(lat) * dcos(declDeg))
             if (cosH > 1.0) return 0.0
             if (cosH < -1.0) return 12.0
-            return r2d(acos(cosH)) / 15.0
+            return darccos(cosH) / 15.0
         }
 
-        // Sunrise & Sunset (Standard atmospheric refraction 34' + semi-diameter 16' = 50' = 0.833333°)
+        // Sunrise & Sunset (atmospheric refraction 34' + sun semi-diameter 16' = 50' = 0.8333°)
         val sunriseAngle = 0.833333
         val semiArc = sunAngleTime(sunriseAngle)
-        val sunriseTime = dhuhrBase - semiArc
-        val sunsetTime = dhuhrBase + semiArc
+        val sunriseTime = noon - semiArc
+        val sunsetTime = noon + semiArc
 
         // Fajr
-        val fajrTime = dhuhrBase - sunAngleTime(method.fajrAngle)
+        val fajrTime = noon - sunAngleTime(method.fajrAngle)
 
         // Asr (Shadow factor 1 for Shafi/Maliki/Hanbali, 2 for Hanafi)
-        val altitudeAtAsr = r2d(atan(1.0 / (madhab.shadowFactor + tan(d2r(abs(lat - declDeg))))))
-        val asrTime = dhuhrBase + sunAngleTime(-altitudeAtAsr)
+        val altAsr = r2d(atan(1.0 / (madhab.shadowFactor + tan(d2r(abs(lat - declDeg))))))
+        val cosHAsr = (dsin(altAsr) - dsin(lat) * dsin(declDeg)) / (dcos(lat) * dcos(declDeg))
+        val asrTime = noon + (darccos(cosHAsr) / 15.0)
 
         // Maghrib
         val maghribTime = if (method.maghribAngle != null) {
-            dhuhrBase + sunAngleTime(method.maghribAngle)
+            noon + sunAngleTime(method.maghribAngle)
         } else {
-            sunsetTime
+            sunsetTime + (1.0 / 60.0) // +1 minute precaution for sunset
         }
 
         // Isha
         val ishaTime = if (method.ishaMinutesAfterMaghrib != null) {
             maghribTime + (method.ishaMinutesAfterMaghrib / 60.0)
         } else {
-            dhuhrBase + sunAngleTime(method.ishaAngle)
+            noon + sunAngleTime(method.ishaAngle)
         }
 
         // Apply Manual Adjustments
@@ -155,7 +220,7 @@ object PrayerTimesCalculator {
         val maghribFinal = adjustTime(maghribTime, settings.adjMaghrib)
         val ishaFinal = adjustTime(ishaTime, settings.adjIsha)
 
-        // Build PrayerTime objects with second-level high precision
+        // Build PrayerTime objects with minute-accurate synchronization for mosque clocks
         val fajrPT = toPrayerTime("FAJR", "الفجر", "Fajr", "Fadjr", cal, fajrFinal)
         val sunrisePT = toPrayerTime("SUNRISE", "الشروق", "Sunrise", "Lever", cal, sunriseFinal)
         val dhuhrPT = if (isFriday) {
@@ -195,6 +260,32 @@ object PrayerTimesCalculator {
         )
     }
 
+    private fun julianDate(year: Int, month: Int, day: Int): Double {
+        var y = year
+        var m = month
+        if (m <= 2) {
+            y -= 1
+            m += 12
+        }
+        val a = floor(y / 100.0)
+        val b = 2.0 - a + floor(a / 4.0)
+        return floor(365.25 * (y + 4716)) + floor(30.6001 * (m + 1)) + day + b - 1524.5
+    }
+
+    private fun fixAngle(a: Double): Double {
+        var res = a - 360.0 * floor(a / 360.0)
+        if (res < 0.0) res += 360.0
+        return res
+    }
+
+    private fun d2r(d: Double): Double = d * Math.PI / 180.0
+    private fun r2d(r: Double): Double = r * 180.0 / Math.PI
+    private fun dsin(d: Double): Double = sin(d2r(d))
+    private fun dcos(d: Double): Double = cos(d2r(d))
+    private fun darcsin(x: Double): Double = r2d(asin(x.coerceIn(-1.0, 1.0)))
+    private fun darccos(x: Double): Double = r2d(acos(x.coerceIn(-1.0, 1.0)))
+    private fun darctan2(y: Double, x: Double): Double = r2d(atan2(y, x))
+
     private fun adjustTime(baseHour: Double, minutesOffset: Int): Double {
         return baseHour + (minutesOffset / 60.0)
     }
@@ -207,15 +298,18 @@ object PrayerTimesCalculator {
         baseCal: Calendar,
         hourDecimal: Double
     ): PrayerTime {
-        val totalSeconds = (hourDecimal * 3600.0).roundToLong()
-        val h = (((totalSeconds / 3600) % 24) + 24) % 24
-        val m = (((totalSeconds % 3600) / 60) + 60) % 60
-        val s = (((totalSeconds % 60)) + 60) % 60
+        var fixedHour = hourDecimal
+        while (fixedHour < 0.0) fixedHour += 24.0
+        while (fixedHour >= 24.0) fixedHour -= 24.0
+
+        val totalMinutes = floor(fixedHour * 60.0 + 0.5).toInt()
+        val h = (totalMinutes / 60) % 24
+        val m = totalMinutes % 60
 
         val cal = baseCal.clone() as Calendar
-        cal.set(Calendar.HOUR_OF_DAY, h.toInt())
-        cal.set(Calendar.MINUTE, m.toInt())
-        cal.set(Calendar.SECOND, s.toInt())
+        cal.set(Calendar.HOUR_OF_DAY, h)
+        cal.set(Calendar.MINUTE, m)
+        cal.set(Calendar.SECOND, 0)
         cal.set(Calendar.MILLISECOND, 0)
 
         return PrayerTime(
@@ -224,25 +318,25 @@ object PrayerTimesCalculator {
             englishName = en,
             frenchName = fr,
             timestamp = cal.timeInMillis,
-            hour24 = h.toInt(),
-            minute = m.toInt()
+            hour24 = h,
+            minute = m
         )
     }
 
     private fun getTimeZoneOffsetHours(tzId: String, date: Date, dstMode: Int): Double {
-        val tz = TimeZone.getTimeZone(tzId)
+        val tz = if (tzId.isNotBlank()) TimeZone.getTimeZone(tzId) else TimeZone.getDefault()
         val offsetMillis = tz.getOffset(date.time)
         var offsetHours = offsetMillis / (1000.0 * 3600.0)
+
+        // dstMode: -1=Auto (device/system default), 1=Force ON, 0=Force OFF
         if (dstMode == 1 && !tz.inDaylightTime(date)) {
             offsetHours += 1.0
         } else if (dstMode == 0 && tz.inDaylightTime(date)) {
-            offsetHours -= 1.0
+            val savings = if (tz.useDaylightTime()) tz.dstSavings else 3600000
+            offsetHours -= (savings / (1000.0 * 3600.0))
         }
         return offsetHours
     }
-
-    private fun d2r(d: Double): Double = d * Math.PI / 180.0
-    private fun r2d(r: Double): Double = r * 180.0 / Math.PI
 
     fun formatTime(hour: Int, minute: Int, is24Hour: Boolean, lang: String): String {
         return if (is24Hour) {

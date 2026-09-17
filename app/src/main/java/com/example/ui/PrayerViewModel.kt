@@ -2,6 +2,7 @@ package com.example.ui
 
 import android.app.Application
 import android.content.Context
+import android.location.Geocoder
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -14,6 +15,7 @@ import com.example.data.local.AppSettingsEntity
 import com.example.data.local.PrayerAlertEntity
 import com.example.util.AlarmScheduler
 import com.example.util.AudioPlayerHelper
+import com.example.util.CityPreset
 import com.example.util.HijriCalendarHelper
 import com.example.util.NotificationHelper
 import com.example.util.PrayerSchedule
@@ -26,10 +28,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Date
+import java.util.Locale
 import java.util.TimeZone
 
 class PrayerViewModel(application: Application) : AndroidViewModel(application) {
@@ -66,17 +70,36 @@ class PrayerViewModel(application: Application) : AndroidViewModel(application) 
     val salawatCountdownMillis: StateFlow<Long> = _salawatCountdownMillis.asStateFlow()
 
     init {
-        var lastComputedMinute = -1
+        // 1. Reactive calculation: whenever settings change in Room, recalculate immediately
+        viewModelScope.launch {
+            repository.settingsFlow.collectLatest { currentSettings ->
+                val now = Calendar.getInstance()
+                val newSched = PrayerTimesCalculator.calculateTimes(now.time, currentSettings)
+                _schedule.value = newSched
+
+                try {
+                    AlarmScheduler.scheduleAll(getApplication())
+                    PrayerWidgetHelper.updateAllWidgets(getApplication())
+                    NotificationHelper.updateOngoingPrayerNotification(getApplication())
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+
+        // 2. Smooth 1-second ticker for clock and countdowns (without jumping prayer times)
         viewModelScope.launch(Dispatchers.Default) {
+            var lastDay = -1
             while (true) {
                 val now = Calendar.getInstance()
                 _currentCalendar.value = now
 
-                val currentMinute = now.get(Calendar.MINUTE)
+                val currentDay = now.get(Calendar.DAY_OF_YEAR)
                 val currentSettings = settings.value
 
-                if (currentMinute != lastComputedMinute || _schedule.value == null) {
-                    lastComputedMinute = currentMinute
+                // If day changed (crossed midnight), recalculate full schedule for the new day
+                if (currentDay != lastDay) {
+                    lastDay = currentDay
                     val sched = PrayerTimesCalculator.calculateTimes(now.time, currentSettings)
                     _schedule.value = sched
                 } else {
@@ -93,10 +116,23 @@ class PrayerViewModel(application: Application) : AndroidViewModel(application) 
                     }
                 }
 
-                // Update Salawat Countdown
-                if (currentSettings.salawatEnabled && currentSettings.nextSalawatTimestamp > 0) {
-                    val remaining = currentSettings.nextSalawatTimestamp - System.currentTimeMillis()
-                    _salawatCountdownMillis.value = remaining.coerceAtLeast(0L)
+                // Update Salawat Countdown smoothly
+                if (currentSettings.salawatEnabled) {
+                    val nowMs = System.currentTimeMillis()
+                    val target = currentSettings.nextSalawatTimestamp
+                    if (target <= 0L) {
+                        val intervalMs = currentSettings.salawatIntervalMinutes.coerceAtLeast(1) * 60 * 1000L
+                        _salawatCountdownMillis.value = intervalMs
+                    } else {
+                        val diff = target - nowMs
+                        if (diff > 0) {
+                            _salawatCountdownMillis.value = diff
+                        } else {
+                            _salawatCountdownMillis.value = 0L
+                        }
+                    }
+                } else {
+                    _salawatCountdownMillis.value = 0L
                 }
 
                 delay(1000)
@@ -110,16 +146,40 @@ class PrayerViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun selectCityPreset(preset: CityPreset) {
+        viewModelScope.launch {
+            val name = if (settings.value.language == "ar") preset.nameAr else preset.nameEn
+            repository.updateSettings(
+                settings.value.copy(
+                    locationMode = "MANUAL",
+                    cityName = name,
+                    latitude = preset.lat,
+                    longitude = preset.lng,
+                    timezoneId = preset.tz,
+                    calcMethod = preset.method,
+                    dstMode = -1 // Auto DST
+                )
+            )
+            _locationMessage.value = "تم ضبط المدينة: $name"
+        }
+    }
+
     fun updateManualLocation(city: String, lat: Double, lng: Double) {
         viewModelScope.launch {
+            val closest = PrayerTimesCalculator.findClosestPreset(lat, lng)
+            val tz = closest?.tz ?: settings.value.timezoneId
+            val method = closest?.method ?: settings.value.calcMethod
             repository.updateSettings(
                 settings.value.copy(
                     locationMode = "MANUAL",
                     cityName = city,
                     latitude = lat,
-                    longitude = lng
+                    longitude = lng,
+                    timezoneId = tz,
+                    calcMethod = method
                 )
             )
+            _locationMessage.value = "تم حفظ الموقع"
         }
     }
 
@@ -142,13 +202,15 @@ class PrayerViewModel(application: Application) : AndroidViewModel(application) 
             if (isGps) lastLoc = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)
             if (lastLoc == null && isNet) lastLoc = lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
 
-            if (lastLoc != null) {
+            val now = System.currentTimeMillis()
+            // If we have a fresh location fix (< 15 mins), use it directly
+            if (lastLoc != null && (now - lastLoc.time) < 15 * 60 * 1000L) {
                 applyDetectedLocation(lastLoc.latitude, lastLoc.longitude)
             } else {
                 val listener = object : LocationListener {
                     override fun onLocationChanged(loc: Location) {
                         applyDetectedLocation(loc.latitude, loc.longitude)
-                        lm.removeUpdates(this)
+                        try { lm.removeUpdates(this) } catch (e: Exception) {}
                     }
                     override fun onProviderEnabled(p: String) {}
                     override fun onProviderDisabled(p: String) {}
@@ -156,7 +218,9 @@ class PrayerViewModel(application: Application) : AndroidViewModel(application) 
                 }
                 if (isNet) lm.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, listener, null)
                 else if (isGps) lm.requestSingleUpdate(LocationManager.GPS_PROVIDER, listener, null)
-                else {
+                else if (lastLoc != null) {
+                    applyDetectedLocation(lastLoc.latitude, lastLoc.longitude)
+                } else {
                     _isDetectingLocation.value = false
                     _locationMessage.value = "يرجى تفعيل خدمة الموقع في الهاتف"
                 }
@@ -168,20 +232,73 @@ class PrayerViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun applyDetectedLocation(lat: Double, lng: Double) {
-        viewModelScope.launch {
-            val tz = TimeZone.getDefault().id
-            val city = "الموقع الحالي (${String.format("%.2f", lat)}, ${String.format("%.2f", lng)})"
+        viewModelScope.launch(Dispatchers.IO) {
+            val context = getApplication<Application>()
+            var resolvedCity = ""
+            var resolvedMethod = settings.value.calcMethod
+            var resolvedTz = TimeZone.getDefault().id
+
+            try {
+                val geocoder = Geocoder(context, Locale.getDefault())
+                val addresses = geocoder.getFromLocation(lat, lng, 1)
+                if (!addresses.isNullOrEmpty()) {
+                    val addr = addresses[0]
+                    val city = addr.locality ?: addr.subAdminArea ?: addr.adminArea
+                    val country = addr.countryName
+                    if (!city.isNullOrBlank() && !country.isNullOrBlank()) {
+                        resolvedCity = "$city، $country"
+                    } else if (!city.isNullOrBlank()) {
+                        resolvedCity = city
+                    } else if (!country.isNullOrBlank()) {
+                        resolvedCity = country
+                    }
+
+                    val cc = addr.countryCode?.uppercase(Locale.US) ?: ""
+                    resolvedMethod = when (cc) {
+                        "EG" -> "EGYPT"
+                        "SA", "YE", "OM", "BH" -> "UMM_AL_QURA"
+                        "AE" -> "DUBAI"
+                        "QA" -> "QATAR"
+                        "KW" -> "KUWAIT"
+                        "TR" -> "DIYANET"
+                        "PK", "IN", "BD", "AF" -> "KARACHI"
+                        "US", "CA" -> "ISNA"
+                        "FR" -> "FRANCE"
+                        "RU" -> "RUSSIA"
+                        "SG", "MY", "ID" -> "MUIS"
+                        "MA", "DZ", "TN", "LY", "JO", "PS", "SY", "LB", "IQ" -> "MWL"
+                        else -> settings.value.calcMethod
+                    }
+                }
+            } catch (e: Exception) {
+                // Geocoder error, fallback
+            }
+
+            // Fallback to closest preset city if Geocoder didn't return a name
+            val closest = PrayerTimesCalculator.findClosestPreset(lat, lng)
+            if (resolvedCity.isBlank()) {
+                if (closest != null) {
+                    resolvedCity = closest.nameAr
+                    resolvedMethod = closest.method
+                    resolvedTz = closest.tz
+                } else {
+                    resolvedCity = "الموقع الحالي (${String.format(Locale.US, "%.2f", lat)}, ${String.format(Locale.US, "%.2f", lng)})"
+                }
+            }
+
             repository.updateSettings(
                 settings.value.copy(
                     locationMode = "AUTO",
-                    cityName = city,
+                    cityName = resolvedCity,
                     latitude = lat,
                     longitude = lng,
-                    timezoneId = tz
+                    timezoneId = resolvedTz,
+                    calcMethod = resolvedMethod,
+                    dstMode = -1 // Auto DST
                 )
             )
             _isDetectingLocation.value = false
-            _locationMessage.value = "تم تحديد الموقع بنجاح"
+            _locationMessage.value = "تم تحديد الموقع: $resolvedCity"
         }
     }
 
@@ -392,6 +509,10 @@ class PrayerViewModel(application: Application) : AndroidViewModel(application) 
 
     fun updateSalawatSettings(intervalMinutes: Int, mode: String, specificIndex: Int, enabled: Boolean) {
         viewModelScope.launch {
+            val intervalChanged = settings.value.salawatIntervalMinutes != intervalMinutes
+            val enabledChanged = settings.value.salawatEnabled != enabled
+            val forceReset = intervalChanged || enabledChanged
+
             val s = settings.value.copy(
                 salawatIntervalMinutes = intervalMinutes,
                 salawatSelectionMode = mode,
@@ -399,28 +520,14 @@ class PrayerViewModel(application: Application) : AndroidViewModel(application) 
                 salawatEnabled = enabled
             )
             repository.updateSettings(s)
-            AlarmScheduler.scheduleSalawat(getApplication(), s)
+            AlarmScheduler.scheduleSalawat(getApplication(), s, forceReset = forceReset)
         }
     }
 
     fun playSalawatNow() {
         val context = getApplication<Application>()
-        val files = ZipExtractor.getExtractedFiles(context, "salawat_audios")
-        if (files.isNotEmpty()) {
-            val s = settings.value
-            val fileToPlay = when (s.salawatSelectionMode) {
-                "RANDOM" -> files.random()
-                "SPECIFIC" -> files[s.salawatSpecificSoundIndex.coerceIn(0, files.size - 1)]
-                else -> {
-                    val nextIdx = (s.salawatLastPlayedIndex + 1) % files.size
-                    viewModelScope.launch { repository.updateSettings(s.copy(salawatLastPlayedIndex = nextIdx)) }
-                    files[nextIdx]
-                }
-            }
-            AudioPlayerHelper.playAudioUri(context, fileToPlay.absolutePath)
-        } else {
-            AudioPlayerHelper.playSynthesizedChime()
-        }
+        com.example.service.SalawatAudioService.start(context)
+        AlarmScheduler.scheduleSalawat(context, settings.value, forceReset = true)
     }
 
     fun playAudioPreview(uri: String?) {

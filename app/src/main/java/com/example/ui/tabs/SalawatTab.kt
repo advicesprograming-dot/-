@@ -54,9 +54,10 @@ fun SalawatTab(
 
     val intervalOptions = listOf(1, 5, 10, 15, 20, 30, 45, 60)
 
-    val remainingSec = (salawatCountdownMillis / 1000) % 60
-    val remainingMin = (salawatCountdownMillis / (1000 * 60)) % 60
-    val remainingHours = salawatCountdownMillis / (1000 * 60 * 60)
+    val safeCountdown = salawatCountdownMillis.coerceAtLeast(0L)
+    val remainingSec = (safeCountdown / 1000) % 60
+    val remainingMin = (safeCountdown / (1000 * 60)) % 60
+    val remainingHours = safeCountdown / (1000 * 60 * 60)
     val formattedCountdown = String.format("%02d:%02d:%02d", remainingHours, remainingMin, remainingSec)
 
     Column(

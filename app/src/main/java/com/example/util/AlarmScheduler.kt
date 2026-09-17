@@ -110,7 +110,9 @@ object AlarmScheduler {
 
             // 4. Schedule Salawat
             if (settings.salawatEnabled) {
-                scheduleSalawat(context, settings)
+                scheduleSalawat(context, settings, forceReset = false)
+            } else {
+                scheduleSalawat(context, settings, forceReset = true)
             }
 
             // 5. Schedule Mesaharaty / Suhoor Alert
@@ -153,11 +155,8 @@ object AlarmScheduler {
         }
     }
 
-    fun scheduleSalawat(context: Context, settings: AppSettingsEntity) {
+    fun scheduleSalawat(context: Context, settings: AppSettingsEntity, forceReset: Boolean = false) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
-        val intervalMillis = settings.salawatIntervalMinutes * 60 * 1000L
-        val nextTime = System.currentTimeMillis() + intervalMillis
-
         val intent = Intent(context, PrayerAlarmReceiver::class.java).apply {
             action = ACTION_SALAWAT
         }
@@ -167,6 +166,33 @@ object AlarmScheduler {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+
+        if (!settings.salawatEnabled) {
+            try {
+                alarmManager.cancel(pi)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            CoroutineScope(Dispatchers.IO).launch {
+                PrayerApplication.instance.database.settingsDao().insertOrUpdate(
+                    settings.copy(nextSalawatTimestamp = 0L)
+                )
+                PrayerWidgetHelper.updateAllWidgets(context)
+                NotificationHelper.updateOngoingPrayerNotification(context)
+            }
+            return
+        }
+
+        val intervalMillis = settings.salawatIntervalMinutes.coerceAtLeast(1) * 60 * 1000L
+        val now = System.currentTimeMillis()
+
+        // If an alarm is already scheduled in the future and we are not forcing a reset, keep it!
+        val nextTime = if (!forceReset && settings.nextSalawatTimestamp > now) {
+            settings.nextSalawatTimestamp
+        } else {
+            now + intervalMillis
+        }
+
         setExactAlarm(alarmManager, nextTime, pi)
 
         // Save timestamp for UI countdown

@@ -69,7 +69,7 @@ data class AppSettingsEntity(
     val latitude: Double = getDefaultLatitude(),
     val longitude: Double = getDefaultLongitude(),
     val timezoneId: String = TimeZone.getDefault().id,
-    val dstMode: Int = 0, // 0=off, 1=on, -1=auto
+    val dstMode: Int = -1, // -1=auto (default, respects system/timezone), 1=force on, 0=force off
     val calcMethod: String = getDefaultCalcMethod(),
     val asrMadhab: String = "SHAFI", // "SHAFI", "MALIKI", "HANBALI", "HANAFI"
     

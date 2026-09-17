@@ -136,6 +136,7 @@ fun MenuDialog(
                             isDetectingLocation = isDetectingLocation,
                             locationMessage = locationMessage,
                             onDetectLocation = { viewModel.detectLocationFromGps() },
+                            onSelectCityPreset = { viewModel.selectCityPreset(it) },
                             onSaveManualLocation = { city, lat, lng ->
                                 viewModel.updateManualLocation(city, lat, lng)
                             },

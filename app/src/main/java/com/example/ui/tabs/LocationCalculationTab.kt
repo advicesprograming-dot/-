@@ -23,12 +23,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import com.example.data.local.AppSettingsEntity
 import com.example.ui.theme.IslamicGold
 import com.example.util.AppStrings
+import com.example.util.CityPreset
 import com.example.util.HijriCalendarHelper
 import com.example.util.PrayerTimesCalculator
 import java.util.Date
 import java.util.TimeZone
-
-data class CityPreset(val nameAr: String, val nameEn: String, val lat: Double, val lng: Double, val tz: String)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,6 +36,7 @@ fun LocationCalculationTab(
     isDetectingLocation: Boolean,
     locationMessage: String?,
     onDetectLocation: () -> Unit,
+    onSelectCityPreset: (CityPreset) -> Unit,
     onSaveManualLocation: (String, Double, Double) -> Unit,
     onSetTimezone: (String) -> Unit,
     onSetDstMode: (Int) -> Unit,
@@ -53,29 +53,7 @@ fun LocationCalculationTab(
     var inputLat by remember(settings.latitude) { mutableStateOf(settings.latitude.toString()) }
     var inputLng by remember(settings.longitude) { mutableStateOf(settings.longitude.toString()) }
 
-    val presets = remember {
-        listOf(
-            CityPreset("مكة المكرمة", "Makkah", 21.4225, 39.8262, "Asia/Riyadh"),
-            CityPreset("المدينة المنورة", "Madinah", 24.4672, 39.6111, "Asia/Riyadh"),
-            CityPreset("الرياض", "Riyadh", 24.7136, 46.6753, "Asia/Riyadh"),
-            CityPreset("القاهرة", "Cairo", 30.0444, 31.2357, "Africa/Cairo"),
-            CityPreset("الإسكندرية", "Alexandria", 31.2001, 29.9187, "Africa/Cairo"),
-            CityPreset("دبي", "Dubai", 25.2048, 55.2708, "Asia/Dubai"),
-            CityPreset("الدوحة", "Doha", 25.2854, 51.5310, "Asia/Qatar"),
-            CityPreset("الكويت", "Kuwait City", 29.3759, 47.9774, "Asia/Kuwait"),
-            CityPreset("القدس الشريف", "Jerusalem", 31.7683, 35.2137, "Asia/Jerusalem"),
-            CityPreset("عمان", "Amman", 31.9454, 35.9284, "Asia/Amman"),
-            CityPreset("بغداد", "Baghdad", 33.3152, 44.3661, "Asia/Baghdad"),
-            CityPreset("دمشق", "Damascus", 33.5138, 36.2765, "Asia/Damascus"),
-            CityPreset("إسطنبول", "Istanbul", 41.0082, 28.9784, "Europe/Istanbul"),
-            CityPreset("الرباط", "Rabat", 34.0209, -6.8416, "Africa/Casablanca"),
-            CityPreset("الجزائر", "Algiers", 36.7538, 3.0588, "Africa/Algiers"),
-            CityPreset("تونس", "Tunis", 36.8065, 10.1815, "Africa/Tunis"),
-            CityPreset("لندن", "London", 51.5074, -0.1278, "Europe/London"),
-            CityPreset("باريس", "Paris", 48.8566, 2.3522, "Europe/Paris"),
-            CityPreset("نيويورك", "New York", 40.7128, -74.0060, "America/New_York")
-        )
-    }
+    val presets = remember { PrayerTimesCalculator.PRESET_CITIES }
 
     val currentHijri = remember(settings.hijriAdjustmentDays) {
         HijriCalendarHelper.getHijriDate(Date(), settings.hijriAdjustmentDays)
@@ -165,8 +143,7 @@ fun LocationCalculationTab(
                                 inputCityName = if (lang == "ar") preset.nameAr else preset.nameEn
                                 inputLat = preset.lat.toString()
                                 inputLng = preset.lng.toString()
-                                onSaveManualLocation(inputCityName, preset.lat, preset.lng)
-                                onSetTimezone(preset.tz)
+                                onSelectCityPreset(preset)
                             },
                             label = { Text(if (lang == "ar") preset.nameAr else preset.nameEn) }
                         )
