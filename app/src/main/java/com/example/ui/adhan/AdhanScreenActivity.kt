@@ -80,17 +80,22 @@ class AdhanScreenActivity : ComponentActivity() {
             AdhanAudioService.stop(this)
             AudioPlayerHelper.stopAudio()
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            @Suppress("DEPRECATION")
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
+            @Suppress("DEPRECATION")
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
                 setShowWhenLocked(false)
                 setTurnScreenOn(false)
             }
             val lp = window.attributes
-            lp.screenBrightness = 0.001f
+            lp.screenBrightness = 0.0f
             window.attributes = lp
         } catch (e: Exception) {
             e.printStackTrace()
         }
         finishAndRemoveTask()
+        finish()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -172,15 +177,13 @@ class AdhanScreenActivity : ComponentActivity() {
             }
         }
 
-        // If pre-alert, allow sufficient time for user to read alert after sound finishes
+        // If pre-alert, close immediately when alert audio finishes
         if (isAlert) {
             AudioPlayerHelper.onAlertCompletedListener = {
                 runOnUiThread {
-                    window.decorView.postDelayed({
-                        if (!isFinishing && !isDestroyed) {
-                            closeAndTurnOffScreen()
-                        }
-                    }, 8000L)
+                    if (!isFinishing && !isDestroyed) {
+                        closeAndTurnOffScreen()
+                    }
                 }
             }
         } else {
@@ -278,24 +281,21 @@ fun AdhanScreenContent(
                 onPlayDuaVideo()
             }
         } else {
+            // Pre-adhan alert: monitor sound and close immediately when finished
             var waitCount = 0
             while (!AudioPlayerHelper.isPlaying() && waitCount < 10) {
                 delay(100)
                 waitCount++
             }
             if (AudioPlayerHelper.isPlaying()) {
-                while (true) {
-                    if (!AudioPlayerHelper.isPlaying()) {
-                        delay(6000L) // Stay visible for 6 seconds after sound finishes
-                        if (!AudioPlayerHelper.isPlaying()) {
-                            break
-                        }
-                    }
-                    delay(250)
+                while (AudioPlayerHelper.isPlaying()) {
+                    delay(150)
                 }
+                // Sound finished -> close and turn off screen immediately!
                 onDismiss()
             } else {
-                delay(20000L) // Stay visible for 20 seconds if muted or until user dismisses
+                // If muted or no audio playing, show alert briefly for 3 seconds then turn off screen
+                delay(3000L)
                 onDismiss()
             }
         }

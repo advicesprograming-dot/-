@@ -68,8 +68,9 @@ fun MosqueClockScreen(
         }
     } else ""
 
-    // Hijri & Gregorian Dates
-    val hijriDate = remember(settings.hijriAdjustmentDays, currentCalendar.timeInMillis) {
+    // Hijri & Gregorian Dates (cached per day instead of every second to prevent CPU lag)
+    val currentDay = currentCalendar.get(Calendar.DAY_OF_YEAR)
+    val hijriDate = remember(settings.hijriAdjustmentDays, currentDay) {
         HijriCalendarHelper.getHijriDate(currentCalendar.time, settings.hijriAdjustmentDays)
     }
 
@@ -81,19 +82,12 @@ fun MosqueClockScreen(
         }
         SimpleDateFormat("EEEE d MMMM yyyy", locale)
     }
-    val gregorianString = gregorianFormat.format(currentCalendar.time)
+    val gregorianString = remember(currentDay, lang) {
+        gregorianFormat.format(currentCalendar.time)
+    }
 
-    // Pulsing LED effect for electronic mosque clock
-    val infiniteTransition = rememberInfiniteTransition(label = "mosque_led")
-    val ledAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.85f,
-        targetValue = 1.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "led_pulse"
-    )
+    // Stable, vibrant LED color without 60fps recomposition overhead on low-end GPUs
+    val ledAlpha = 1.0f
 
     // Next Prayer live countdown ticking with currentCalendar every second
     val nowMs = currentCalendar.timeInMillis

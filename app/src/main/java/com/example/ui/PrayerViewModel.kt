@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -70,21 +71,41 @@ class PrayerViewModel(application: Application) : AndroidViewModel(application) 
     val salawatCountdownMillis: StateFlow<Long> = _salawatCountdownMillis.asStateFlow()
 
     init {
-        // 1. Reactive calculation: whenever settings change in Room, recalculate immediately
+        // 1. Reactive calculation: only recalculate when user changes prayer-affecting settings
+        // Ignores internal nextSalawatTimestamp updates to prevent background loop
         viewModelScope.launch {
-            repository.settingsFlow.collectLatest { currentSettings ->
-                val now = Calendar.getInstance()
-                val newSched = PrayerTimesCalculator.calculateTimes(now.time, currentSettings)
-                _schedule.value = newSched
-
-                try {
-                    AlarmScheduler.scheduleAll(getApplication())
-                    PrayerWidgetHelper.updateAllWidgets(getApplication())
-                    NotificationHelper.updateOngoingPrayerNotification(getApplication())
-                } catch (e: Exception) {
-                    e.printStackTrace()
+            repository.settingsFlow
+                .distinctUntilChanged { old, new ->
+                    old.latitude == new.latitude &&
+                            old.longitude == new.longitude &&
+                            old.timezoneId == new.timezoneId &&
+                            old.dstMode == new.dstMode &&
+                            old.calcMethod == new.calcMethod &&
+                            old.asrMadhab == new.asrMadhab &&
+                            old.hijriAdjustmentDays == new.hijriAdjustmentDays &&
+                            old.cityName == new.cityName &&
+                            old.preAdhanAlertsEnabled == new.preAdhanAlertsEnabled &&
+                            old.salawatEnabled == new.salawatEnabled &&
+                            old.salawatIntervalMinutes == new.salawatIntervalMinutes &&
+                            old.mesaharatyEnabled == new.mesaharatyEnabled &&
+                            old.mesaharatyMode == new.mesaharatyMode &&
+                            old.mesaharatyFixedTime == new.mesaharatyFixedTime &&
+                            old.mesaharatyBeforeFajrMinutes == new.mesaharatyBeforeFajrMinutes &&
+                            old.ramadanCannonEnabled == new.ramadanCannonEnabled
                 }
-            }
+                .collectLatest { currentSettings ->
+                    val now = Calendar.getInstance()
+                    val newSched = PrayerTimesCalculator.calculateTimes(now.time, currentSettings)
+                    _schedule.value = newSched
+
+                    try {
+                        AlarmScheduler.scheduleAll(getApplication())
+                        PrayerWidgetHelper.updateAllWidgets(getApplication())
+                        NotificationHelper.updateOngoingPrayerNotification(getApplication())
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
         }
 
         // 2. Smooth 1-second ticker for clock and countdowns (without jumping prayer times)

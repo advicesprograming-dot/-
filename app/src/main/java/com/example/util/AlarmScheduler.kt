@@ -39,8 +39,9 @@ object AlarmScheduler {
             val calTomorrow = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1) }
             val tomorrowSchedule = PrayerTimesCalculator.calculateTimes(calTomorrow.time, settings)
 
-            // 2. Schedule Adhans and Pre-Adhan Alerts for the next 30 days continuously (Lifetime Scheduling)
-            for (dayOffset in 0..30) {
+            // 2. Schedule Adhans and Pre-Adhan Alerts for the next 2 days (Today, Tomorrow, Day After)
+            // Rescheduled automatically on each alarm, keeping system responsive and light
+            for (dayOffset in 0..2) {
                 val dayCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, dayOffset) }
                 val schedule = PrayerTimesCalculator.calculateTimes(dayCal.time, settings)
                 val dayOfWeek = dayCal.get(Calendar.DAY_OF_WEEK)
@@ -173,12 +174,12 @@ object AlarmScheduler {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-            CoroutineScope(Dispatchers.IO).launch {
-                PrayerApplication.instance.database.settingsDao().insertOrUpdate(
-                    settings.copy(nextSalawatTimestamp = 0L)
-                )
-                PrayerWidgetHelper.updateAllWidgets(context)
-                NotificationHelper.updateOngoingPrayerNotification(context)
+            if (settings.nextSalawatTimestamp != 0L) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    PrayerApplication.instance.database.settingsDao().insertOrUpdate(
+                        settings.copy(nextSalawatTimestamp = 0L)
+                    )
+                }
             }
             return
         }
@@ -195,22 +196,19 @@ object AlarmScheduler {
 
         setExactAlarm(alarmManager, nextTime, pi)
 
-        // Save timestamp for UI countdown
-        CoroutineScope(Dispatchers.IO).launch {
-            PrayerApplication.instance.database.settingsDao().insertOrUpdate(
-                settings.copy(nextSalawatTimestamp = nextTime)
-            )
-            PrayerWidgetHelper.updateAllWidgets(context)
-            NotificationHelper.updateOngoingPrayerNotification(context)
+        // Only persist if the timestamp has actually changed to prevent recursive database triggers
+        if (settings.nextSalawatTimestamp != nextTime) {
+            CoroutineScope(Dispatchers.IO).launch {
+                PrayerApplication.instance.database.settingsDao().insertOrUpdate(
+                    settings.copy(nextSalawatTimestamp = nextTime)
+                )
+            }
         }
     }
 
     private fun setExactAlarm(alarmManager: AlarmManager, triggerAtMillis: Long, operation: PendingIntent) {
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                val alarmClockInfo = AlarmManager.AlarmClockInfo(triggerAtMillis, operation)
-                alarmManager.setAlarmClock(alarmClockInfo, operation)
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation)
             } else {
                 alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation)
@@ -218,13 +216,9 @@ object AlarmScheduler {
         } catch (e: SecurityException) {
             e.printStackTrace()
             try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation)
-                } else {
-                    alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation)
-                }
-            } catch (ex: Exception) {
                 alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation)
+            } catch (ex: Exception) {
+                ex.printStackTrace()
             }
         } catch (e: Exception) {
             e.printStackTrace()
