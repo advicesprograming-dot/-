@@ -261,9 +261,22 @@ fun AdhanScreenContent(
             delay(240000L)
             onPlayDuaVideo()
         } else {
-            // Pre-adhan alert fallback timeout: 10 seconds max
-            delay(10000L)
-            onDismiss()
+            // Pre-adhan alert: monitor audio state until audio finishes playing completely, or max 60 seconds
+            var waitCount = 0
+            while (!AudioPlayerHelper.isPlaying() && waitCount < 15) {
+                delay(100)
+                waitCount++
+            }
+            if (AudioPlayerHelper.isPlaying()) {
+                while (AudioPlayerHelper.isPlaying()) {
+                    delay(250)
+                }
+                delay(500)
+                onDismiss()
+            } else {
+                delay(20000L) // fallback if muted or no audio
+                onDismiss()
+            }
         }
     }
 
