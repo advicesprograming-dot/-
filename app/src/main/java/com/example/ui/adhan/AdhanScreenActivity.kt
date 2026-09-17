@@ -177,9 +177,10 @@ class AdhanScreenActivity : ComponentActivity() {
             }
         }
 
-        // If pre-alert, close immediately when alert audio finishes
+        // If pre-alert, close after audio or 5 seconds
         if (isAlert) {
-            AudioPlayerHelper.onAlertCompletedListener = {
+            // Pre-alert handler
+            AudioPlayerHelper.playAudioUri(this, intent.getStringExtra("EXTRA_RINGTONE_URI")) {
                 runOnUiThread {
                     if (!isFinishing && !isDestroyed) {
                         closeAndTurnOffScreen()
@@ -188,7 +189,7 @@ class AdhanScreenActivity : ComponentActivity() {
             }
         } else {
             // When Adhan finishes, transition automatically to horizontal fullscreen Dua video
-            AudioPlayerHelper.onAlertCompletedListener = {
+            com.example.service.AdhanAudioService.onAdhanCompletedListener = {
                 runOnUiThread {
                     launchDuaVideo()
                 }
@@ -215,8 +216,7 @@ class AdhanScreenActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        AudioPlayerHelper.onAlertCompletedListener = null
-        // AudioPlayerHelper.stopAudio() // Removed to prevent interrupting Dua audio
+        com.example.service.AdhanAudioService.onAdhanCompletedListener = null
     }
 }
 
@@ -254,50 +254,16 @@ fun AdhanScreenContent(
         }
     }
 
-    // Auto-detect when Adhan audio finishes to automatically transition to Dua video
+    // Auto-detect when Adhan audio finishes or fallback timeout
     LaunchedEffect(isAlert) {
         if (!isAlert) {
-            var waitCount = 0
-            while (!AudioPlayerHelper.isPlaying() && waitCount < 10) {
-                delay(100)
-                waitCount++
-            }
-            if (AudioPlayerHelper.isPlaying()) {
-                while (true) {
-                    if (!AudioPlayerHelper.isPlaying()) {
-                        // Check again after 1.5 seconds to ensure it's not just transitioning
-                        delay(1500)
-                        if (!AudioPlayerHelper.isPlaying()) {
-                            break
-                        }
-                    }
-                    delay(250)
-                }
-                // Adhan audio ended -> launch post-Adhan Dua video automatically
-                onPlayDuaVideo()
-            } else {
-                // If phone is muted or no audio playing, display images for 15s then transition to Dua video
-                delay(15000L)
-                onPlayDuaVideo()
-            }
+            // Fallback timeout for Adhan: 4 minutes max if audio state is ambiguous, otherwise AdhanAudioService listener triggers onPlayDuaVideo()
+            delay(240000L)
+            onPlayDuaVideo()
         } else {
-            // Pre-adhan alert: monitor sound and close immediately when finished
-            var waitCount = 0
-            while (!AudioPlayerHelper.isPlaying() && waitCount < 10) {
-                delay(100)
-                waitCount++
-            }
-            if (AudioPlayerHelper.isPlaying()) {
-                while (AudioPlayerHelper.isPlaying()) {
-                    delay(150)
-                }
-                // Sound finished -> close and turn off screen immediately!
-                onDismiss()
-            } else {
-                // If muted or no audio playing, show alert briefly for 3 seconds then turn off screen
-                delay(3000L)
-                onDismiss()
-            }
+            // Pre-adhan alert fallback timeout: 10 seconds max
+            delay(10000L)
+            onDismiss()
         }
     }
 

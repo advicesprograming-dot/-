@@ -79,18 +79,23 @@ class AdhanAudioService : Service() {
             }
 
             // Play Pre-Chime first
+            val onAdhanFinished = {
+                onAdhanCompletedListener?.invoke()
+                stopSelf()
+            }
+
             if (!preSoundUri.isNullOrBlank()) {
                 AudioPlayerHelper.playAudioUri(this@AdhanAudioService, preSoundUri) {
                     // Directly followed by Adhan without delay
                     AudioPlayerHelper.playAudioUri(this@AdhanAudioService, adhanSoundUri) {
-                        stopSelf()
+                        onAdhanFinished()
                     }
                 }
             } else {
                 AudioPlayerHelper.playTimeChime {
                     // Directly followed by Adhan
                     AudioPlayerHelper.playAudioUri(this@AdhanAudioService, adhanSoundUri) {
-                        stopSelf()
+                        onAdhanFinished()
                     }
                 }
             }
@@ -101,10 +106,11 @@ class AdhanAudioService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        // AudioPlayerHelper.stopAudio() // Removed to prevent interrupting Dua audio
+        onAdhanCompletedListener = null
     }
 
     companion object {
+        var onAdhanCompletedListener: (() -> Unit)? = null
         fun start(context: Context, prayerId: String, prayerName: String) {
             val intent = Intent(context, AdhanAudioService::class.java).apply {
                 putExtra("PRAYER_ID", prayerId)
