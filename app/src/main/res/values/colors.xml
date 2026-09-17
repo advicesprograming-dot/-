@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    
+    <!-- Prayer Widget & Notification Colors from Design -->
+    <color name="widget_bg">#FF0C1723</color>
+    <color name="widget_cyan_banner">#FF0092D6</color>
+    <color name="widget_cell_bg">#FF142232</color>
+    <color name="widget_highlight_bg">#FFFFFFFF</color>
+    <color name="widget_highlight_text">#FF0077B6</color>
+    <color name="widget_gold">#FFE5A93C</color>
+    <color name="widget_salawat_bg">#FF0B3326</color>
+    <color name="widget_salawat_green">#FF4EBA86</color>
+    <color name="widget_text_muted">#FFA0B2C6</color>
+
+    <!-- Emerald Mosque Theme (Image 1) -->
+    <color name="widget_emerald_bg">#FF062E25</color>
+    <color name="widget_emerald_banner">#FF0B4638</color>
+    <color name="widget_emerald_cell">#FF0B3A2F</color>
+    <color name="widget_emerald_gold">#FFF6C953</color>
+    <color name="widget_emerald_text_muted">#FF9ECEBA</color>
+    <color name="widget_emerald_badge">#FF08231C</color>
+    <color name="widget_emerald_arc">#FFE53935</color>
+
+    <!-- Burgundy Mosque Theme (Image 2) -->
+    <color name="widget_burgundy_bg">#FF450711</color>
+    <color name="widget_burgundy_banner">#FF610C1B</color>
+    <color name="widget_burgundy_cell">#FF520A16</color>
+    <color name="widget_burgundy_gold">#FFF6C953</color>
+    <color name="widget_burgundy_text_muted">#FFDEB5BA</color>
+    <color name="widget_burgundy_badge">#FF32040B</color>
+    <color name="widget_burgundy_arc">#FFF6C953</color>
+</resources>

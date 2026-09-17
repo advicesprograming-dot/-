@@ -1,0 +1,8 @@
+{
+  "name": "Remix صلاتي - مواقيت الصلاة والأذان",
+  "description": "تطبيق أذان ومواقيت صلاة متكامل بساعة المسجد الإلكترونية، تنبيهات قابلة للتخصيص، ودعم كامل للعمل في الخلفية والشاشة المقفلة.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

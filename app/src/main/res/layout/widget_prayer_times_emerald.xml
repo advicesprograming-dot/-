@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_widget_emerald"
+    android:padding="8dp">
+
+    <!-- Top Header: City & Title with Crescent Emblem -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="6dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="6dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="4dp"
+                android:src="@drawable/ic_mosque_crescent"
+                android:contentDescription="@null" />
+
+            <TextView
+                android:id="@+id/tv_widget_city"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="مكة المكرمة"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_widget_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:text="أوقات الصلاة للمساجد 🕌"
+            android:textColor="@color/widget_emerald_gold"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </RelativeLayout>
+
+    <!-- Emerald Mosque Hero Banner with Circular Countdown & Next Prayer -->
+    <LinearLayout
+        android:id="@+id/banner_next_prayer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_widget_emerald"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:paddingVertical="10dp"
+        android:paddingHorizontal="14dp">
+
+        <LinearLayout
+            android:id="@+id/layout_widget_prayer_countdown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tv_widget_countdown_prefix"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="المتبقي على "
+                android:textColor="@color/white"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <Chronometer
+                android:id="@+id/chronometer_widget_prayer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/widget_emerald_gold"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_widget_countdown_suffix"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="@color/white"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_widget_countdown_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="المتبقي على"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tv_widget_next_prayer_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="صلاة الظهر"
+            android:textColor="@color/widget_emerald_gold"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginTop="2dp" />
+
+        <!-- Quranic Verse Banner (from Image 1) -->
+        <TextView
+            android:id="@+id/tv_widget_verse"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="﴿ إِنَّ الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ سَيَجْعَلُ لَهُمُ الرَّحْمَٰنُ وُدًّا ﴾"
+            android:textColor="@color/widget_emerald_gold"
+            android:textSize="11sp"
+            android:textStyle="italic"
+            android:gravity="center"
+            android:layout_marginTop="4dp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="3dp">
+
+            <TextView
+                android:id="@+id/tv_widget_hijri"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="الإثنين 17 ذو القعدة 1447"
+                android:textColor="@color/widget_emerald_text_muted"
+                android:textSize="11sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=" • "
+                android:textColor="@color/widget_emerald_text_muted"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/tv_widget_gregorian"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2026/05/04"
+                android:textColor="@color/widget_emerald_text_muted"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 5 Prayers Columns Row with Emerald Dome Arches -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="6dp"
+        android:baselineAligned="false">
+
+        <!-- Fajr -->
+        <LinearLayout
+            android:id="@+id/col_fajr"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_dome_emerald"
+            android:paddingVertical="7dp"
+            android:layout_marginHorizontal="2dp">
+
+            <TextView
+                android:id="@+id/tv_col_fajr_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="القادمة"
+                android:textColor="@color/widget_emerald_gold"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:visibility="invisible" />
+
+            <TextView
+                android:id="@+id/tv_col_fajr_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="الفجر"
+                android:textColor="@color/widget_emerald_text_muted"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_col_fajr_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="04:26"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <!-- Dhuhr -->
+        <LinearLayout
+            android:id="@+id/col_dhuhr"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_dome_emerald"
+            android:paddingVertical="7dp"
+            android:layout_marginHorizontal="2dp">
+
+            <TextView
+                android:id="@+id/tv_col_dhuhr_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="القادمة"
+                android:textColor="@color/widget_emerald_gold"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:visibility="invisible" />
+
+            <TextView
+                android:id="@+id/tv_col_dhuhr_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="الظهر"
+                android:textColor="@color/widget_emerald_text_muted"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_col_dhuhr_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="12:18"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <!-- Asr -->
+        <LinearLayout
+            android:id="@+id/col_asr"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_dome_emerald"
+            android:paddingVertical="7dp"
+            android:layout_marginHorizontal="2dp">
+
+            <TextView
+                android:id="@+id/tv_col_asr_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="القادمة"
+                android:textColor="@color/widget_emerald_gold"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:visibility="invisible" />
+
+            <TextView
+                android:id="@+id/tv_col_asr_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="العصر"
+                android:textColor="@color/widget_emerald_text_muted"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_col_asr_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="15:38"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <!-- Maghrib -->
+        <LinearLayout
+            android:id="@+id/col_maghrib"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_dome_emerald"
+            android:paddingVertical="7dp"
+            android:layout_marginHorizontal="2dp">
+
+            <TextView
+                android:id="@+id/tv_col_maghrib_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="القادمة"
+                android:textColor="@color/widget_emerald_gold"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:visibility="invisible" />
+
+            <TextView
+                android:id="@+id/tv_col_maghrib_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="المغرب"
+                android:textColor="@color/widget_emerald_text_muted"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_col_maghrib_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="18:48"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <!-- Isha -->
+        <LinearLayout
+            android:id="@+id/col_isha"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_dome_emerald"
+            android:paddingVertical="7dp"
+            android:layout_marginHorizontal="2dp">
+
+            <TextView
+                android:id="@+id/tv_col_isha_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="القادمة"
+                android:textColor="@color/widget_emerald_gold"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:visibility="invisible" />
+
+            <TextView
+                android:id="@+id/tv_col_isha_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="العشاء"
+                android:textColor="@color/widget_emerald_text_muted"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_col_isha_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="20:18"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Hadith Nabawi Footer (from Image 1) -->
+    <TextView
+        android:id="@+id/tv_widget_hadith"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="قال ﷺ: إن من أحبكم إلي وأقربكم مني مجلسا يوم القيامة أحاسنكم أخلاقا"
+        android:textColor="@color/widget_emerald_text_muted"
+        android:textSize="10sp"
+        android:gravity="center"
+        android:layout_marginTop="5dp"
+        android:paddingHorizontal="4dp" />
+
+    <!-- Salawat Bar with Live Seconds Chronometer and "صلّ الآن ﷺ" Button -->
+    <LinearLayout
+        android:id="@+id/layout_widget_salawat"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_salawat_notif_card"
+        android:paddingVertical="5dp"
+        android:paddingHorizontal="8dp"
+        android:layout_marginTop="6dp">
+
+        <LinearLayout
+            android:id="@+id/layout_widget_salawat_timer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="الصلاة على النبي ﷺ: يتبقى "
+                android:textColor="@color/widget_emerald_gold"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <Chronometer
+                android:id="@+id/chronometer_widget_salawat"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/widget_emerald_gold"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_widget_salawat_countdown"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="الصلاة على النبي ﷺ: يتبقى 14:50"
+            android:textColor="@color/widget_emerald_gold"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/btn_widget_salawat_action"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="صلّ الآن ﷺ"
+            android:textColor="#05241D"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:background="@drawable/bg_gold_button"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="4dp" />
+    </LinearLayout>
+
+</LinearLayout>

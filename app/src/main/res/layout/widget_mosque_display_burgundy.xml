@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/card_mosque_display"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_widget_burgundy"
+    android:padding="8dp">
+
+    <!-- Top Bar: Date, Hijri, City / Mosque Name -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="4dp"
+        android:paddingBottom="4dp">
+
+        <TextView
+            android:id="@+id/tv_strip_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:text="الأربعاء 9 شعبان 1447 • 2026/01/28"
+            android:textColor="@color/widget_burgundy_gold"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_strip_mosque_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:text="مسجد الهدى • مكة المكرمة"
+            android:textColor="@color/white"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </RelativeLayout>
+
+    <!-- Main Row: Crescent Emblem (Left), Clock with Seconds (Center), Circular Countdown Dial (Right) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="4dp">
+
+        <!-- Left: Crescent Emblem -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center">
+
+            <ImageView
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:src="@drawable/ic_mosque_crescent"
+                android:contentDescription="@null" />
+        </LinearLayout>
+
+        <!-- Center: Big Mosque Digital Clock with Live Seconds -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2.2"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <TextClock
+                android:id="@+id/textclock_strip_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:format12Hour="h:mm"
+                android:format24Hour="HH:mm"
+                android:textColor="@color/white"
+                android:textSize="32sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginStart="4dp">
+
+                <!-- Live Seconds from TextClock -->
+                <TextClock
+                    android:id="@+id/textclock_strip_seconds"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:format12Hour="ss"
+                    android:format24Hour="ss"
+                    android:textColor="@color/widget_burgundy_gold"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextClock
+                    android:id="@+id/textclock_strip_ampm"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:format12Hour="a"
+                    android:format24Hour=""
+                    android:textColor="@color/widget_burgundy_text_muted"
+                    android:textSize="10sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Right: Circular Countdown Dial -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.2"
+            android:gravity="center">
+
+            <LinearLayout
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:background="@drawable/bg_badge_burgundy"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="2dp">
+
+                <Chronometer
+                    android:id="@+id/chronometer_strip_prayer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/widget_burgundy_gold"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_strip_countdown_prayer_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="المتبقي للشروق"
+                    android:textColor="@color/white"
+                    android:textSize="8sp"
+                    android:gravity="center" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Middle Quranic Verse Banner (from Image 2) -->
+    <TextView
+        android:id="@+id/tv_strip_verse"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="﴿ وَمَن يُؤْمِن بِاللَّهِ يَهْدِ قَلْبَهُ ﴾"
+        android:textColor="@color/widget_burgundy_gold"
+        android:textSize="11sp"
+        android:gravity="center"
+        android:layout_marginVertical="2dp" />
+
+    <!-- 6 Prayer Columns Row (Fajr, Shuruq, Dhuhr, Asr, Maghrib, Isha) with Dome Tops -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:baselineAligned="false"
+        android:layout_marginTop="3dp">
+
+        <!-- Fajr -->
+        <LinearLayout
+            android:id="@+id/cell_strip_fajr"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_dome_burgundy"
+            android:paddingVertical="4dp"
+            android:layout_marginHorizontal="1dp">
+
+            <TextView
+                android:id="@+id/tv_strip_name_fajr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="الفجر"
+                android:textColor="@color/widget_burgundy_text_muted"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_strip_time_fajr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="05:41"
+                android:textColor="@color/white"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Shuruq -->
+        <LinearLayout
+            android:id="@+id/cell_strip_sunrise"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_dome_burgundy"
+            android:paddingVertical="4dp"
+            android:layout_marginHorizontal="1dp">
+
+            <TextView
+                android:id="@+id/tv_strip_name_sunrise"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="الشروق"
+                android:textColor="@color/widget_burgundy_text_muted"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_strip_time_sunrise"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="06:59"
+                android:textColor="@color/white"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Dhuhr -->
+        <LinearLayout
+            android:id="@+id/cell_strip_dhuhr"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_dome_burgundy"
+            android:paddingVertical="4dp"
+            android:layout_marginHorizontal="1dp">
+
+            <TextView
+                android:id="@+id/tv_strip_name_dhuhr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="الظهر"
+                android:textColor="@color/widget_burgundy_text_muted"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_strip_time_dhuhr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="12:34"
+                android:textColor="@color/white"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Asr -->
+        <LinearLayout
+            android:id="@+id/cell_strip_asr"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_dome_burgundy"
+            android:paddingVertical="4dp"
+            android:layout_marginHorizontal="1dp">
+
+            <TextView
+                android:id="@+id/tv_strip_name_asr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="العصر"
+                android:textColor="@color/widget_burgundy_text_muted"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_strip_time_asr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="15:46"
+                android:textColor="@color/white"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Maghrib -->
+        <LinearLayout
+            android:id="@+id/cell_strip_maghrib"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_dome_burgundy"
+            android:paddingVertical="4dp"
+            android:layout_marginHorizontal="1dp">
+
+            <TextView
+                android:id="@+id/tv_strip_name_maghrib"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="المغرب"
+                android:textColor="@color/widget_burgundy_text_muted"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_strip_time_maghrib"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="18:08"
+                android:textColor="@color/white"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Isha -->
+        <LinearLayout
+            android:id="@+id/cell_strip_isha"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_dome_burgundy"
+            android:paddingVertical="4dp"
+            android:layout_marginHorizontal="1dp">
+
+            <TextView
+                android:id="@+id/tv_strip_name_isha"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="العشاء"
+                android:textColor="@color/widget_burgundy_text_muted"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_strip_time_isha"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="19:38"
+                android:textColor="@color/white"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Bottom Hadith Nabawi (from Image 2) -->
+    <TextView
+        android:id="@+id/tv_strip_hadith"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="قال ﷺ: ما ملأ ابن آدم وعاء شرا من بطنه"
+        android:textColor="@color/widget_burgundy_text_muted"
+        android:textSize="9sp"
+        android:gravity="center"
+        android:layout_marginTop="4dp" />
+
+    <!-- Salawat Mini Action Row -->
+    <LinearLayout
+        android:id="@+id/layout_strip_salawat"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_salawat_notif_card"
+        android:paddingVertical="3dp"
+        android:paddingHorizontal="6dp"
+        android:layout_marginTop="4dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="الصلاة على النبي ﷺ: يتبقى "
+                android:textColor="@color/widget_burgundy_gold"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <Chronometer
+                android:id="@+id/chronometer_strip_salawat"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/widget_burgundy_gold"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/btn_strip_salawat_action"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="صلّ الآن ﷺ"
+            android:textColor="#36040C"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:background="@drawable/bg_gold_button"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp" />
+    </LinearLayout>
+
+</LinearLayout>
