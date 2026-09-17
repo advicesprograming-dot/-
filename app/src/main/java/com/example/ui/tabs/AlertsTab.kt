@@ -1,6 +1,7 @@
 package com.example.ui.tabs
 
 import android.app.Activity
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -307,6 +308,35 @@ fun AlertsTab(
                             context.startActivity(intent)
                         }
                     )
+
+                    // 5. Special Samsung Device Care (Galaxy A30s & all One UI devices)
+                    if (Build.MANUFACTURER.equals("samsung", ignoreCase = true)) {
+                        Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+                        PermissionRow(
+                            title = AppStrings.get("perm_samsung_title", language),
+                            description = AppStrings.get("perm_samsung_desc", language),
+                            isGranted = true,
+                            buttonText = AppStrings.get("perm_samsung_action", language),
+                            onClick = {
+                                val intents = listOf(
+                                    Intent().setComponent(ComponentName("com.samsung.android.lool", "com.samsung.android.sm.ui.battery.BatteryActivity")),
+                                    Intent().setComponent(ComponentName("com.samsung.android.sm", "com.samsung.android.sm.ui.battery.BatteryActivity")),
+                                    Intent("com.samsung.android.sm.ACTION_BATTERY"),
+                                    Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS),
+                                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                        data = Uri.parse("package:${context.packageName}")
+                                    }
+                                )
+                                for (targetIntent in intents) {
+                                    try {
+                                        targetIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        context.startActivity(targetIntent)
+                                        break
+                                    } catch (_: Exception) {}
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }

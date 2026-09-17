@@ -220,6 +220,80 @@ object AudioPlayerHelper {
         }
     }
 
+    fun playDuaMelody(onComplete: (() -> Unit)? = null) {
+        stopAudio()
+        CoroutineScope(Dispatchers.Default).launch {
+            try {
+                val sampleRate = 44100
+                // Gentle, ambient spiritual harmonic progression for Post-Adhan Dua contemplation
+                val chords = listOf(
+                    Pair(349.23, 3.5), // F4
+                    Pair(392.00, 3.5), // G4
+                    Pair(440.00, 3.5), // A4
+                    Pair(523.25, 4.0), // C5
+                    Pair(440.00, 3.5), // A4
+                    Pair(349.23, 4.0)  // F4 peaceful resolution
+                )
+
+                val audioTrack = AudioTrack.Builder()
+                    .setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_ALARM)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .build()
+                    )
+                    .setAudioFormat(
+                        AudioFormat.Builder()
+                            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                            .setSampleRate(sampleRate)
+                            .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                            .build()
+                    )
+                    .setBufferSizeInBytes(sampleRate * 2)
+                    .setTransferMode(AudioTrack.MODE_STREAM)
+                    .build()
+
+                activeAudioTrack = audioTrack
+                audioTrack.play()
+                isPlayingAudio = true
+
+                for ((freq, durationSec) in chords) {
+                    if (!isPlayingAudio) break
+                    val numSamples = (durationSec * sampleRate).toInt()
+                    val buffer = ShortArray(numSamples)
+                    for (i in 0 until numSamples) {
+                        val t = i.toDouble() / sampleRate
+                        val attack = (t / 0.8).coerceAtMost(1.0)
+                        val decay = Math.exp(-0.8 * t / durationSec)
+                        val s1 = sin(2 * Math.PI * freq * t)
+                        val s2 = 0.4 * sin(2 * Math.PI * (freq * 1.5) * t) // Fifth
+                        val s3 = 0.25 * sin(2 * Math.PI * (freq * 2) * t) // Octave
+                        val sample = (s1 + s2 + s3) * attack * decay * Short.MAX_VALUE * 0.45
+                        buffer[i] = sample.toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    }
+                    audioTrack.write(buffer, 0, buffer.size)
+                }
+
+                audioTrack.stop()
+                audioTrack.release()
+                activeAudioTrack = null
+                isPlayingAudio = false
+                CoroutineScope(Dispatchers.Main).launch {
+                    onComplete?.invoke()
+                    onAlertCompletedListener?.invoke()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                isPlayingAudio = false
+                activeAudioTrack = null
+                CoroutineScope(Dispatchers.Main).launch {
+                    onComplete?.invoke()
+                    onAlertCompletedListener?.invoke()
+                }
+            }
+        }
+    }
+
     fun stopAudio() {
         try {
             isPlayingAudio = false

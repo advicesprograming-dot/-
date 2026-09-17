@@ -96,7 +96,28 @@ class AdhanScreenActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Ensure activity displays specifically over lock screen and turns screen on without dismissing the lock screen
+        // 1. Force hardware display to wake up immediately from deep sleep on Samsung AMOLED & all devices
+        try {
+            val pm = getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
+            val wakeLock = pm?.newWakeLock(
+                @Suppress("DEPRECATION")
+                android.os.PowerManager.SCREEN_BRIGHT_WAKE_LOCK or
+                        android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP or
+                        android.os.PowerManager.ON_AFTER_RELEASE,
+                "PrayerApp:AdhanScreenWake"
+            )
+            wakeLock?.acquire(3000L)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // 2. Cutout handling for Samsung Infinity-U display / notches
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes.layoutInDisplayCutoutMode =
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
+
+        // 3. Ensure activity displays specifically over lock screen and turns screen on without dismissing the lock screen
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
@@ -105,7 +126,8 @@ class AdhanScreenActivity : ComponentActivity() {
         window.addFlags(
             WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
                     WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
-                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+                    WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
         )
 
         val rawPrayerId = intent.getStringExtra("EXTRA_PRAYER_ID") ?: "FAJR"
@@ -136,11 +158,16 @@ class AdhanScreenActivity : ComponentActivity() {
                     }
                 }
                 val intent = Intent(this@AdhanScreenActivity, DuaVideoActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT)
                     putExtra("EXTRA_PRAYER_ID", rawPrayerId)
                     putExtra("EXTRA_PRAYER_NAME", formattedPrayerName)
                     putExtra("EXTRA_VIDEO_URI", videoUri)
                 }
-                startActivity(intent)
+                try {
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
                 finish()
             }
         }

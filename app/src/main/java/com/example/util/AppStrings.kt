@@ -112,6 +112,9 @@ object AppStrings {
         "perm_files_title" to "4. الوصول لملفات الوسائط بالجهاز",
         "perm_files_desc" to "لاختيار أصوات الأذان، التنبيهات، ملفات ZIP، ومقاطع الفيديو من هاتفك.",
         "perm_files_action" to "منح إذن الوصول للملفات",
+        "perm_samsung_title" to "إعدادات بطارية سامسونج (Samsung Device Care)",
+        "perm_samsung_desc" to "مخصص لهواتف سامسونج وGalaxy A30s: افتح العناية بالجهاز وتأكد من عدم وضع التطبيق في قائمة التطبيقات الساكنة لضمان دقة الأذان 100%.",
+        "perm_samsung_action" to "فتح العناية بالجهاز",
         "status_granted" to "مفعّل وممنوح ✓",
         "status_needed" to "يحتاج إلى تفعيل",
         
@@ -273,6 +276,9 @@ object AppStrings {
         "perm_files_title" to "4. Device Storage & Media Access",
         "perm_files_desc" to "Allows selecting audio, videos, ZIP files, and photos from your device.",
         "perm_files_action" to "Grant Media Access",
+        "perm_samsung_title" to "Samsung Device Care & Battery",
+        "perm_samsung_desc" to "Specifically for Samsung & Galaxy A30s: Ensure the app is in 'Never sleeping apps' for 100% timely Adhan.",
+        "perm_samsung_action" to "Open Device Care",
         "status_granted" to "Granted ✓",
         "status_needed" to "Action Needed",
         

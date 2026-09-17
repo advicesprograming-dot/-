@@ -50,7 +50,7 @@
             android:name=".ui.adhan.AdhanScreenActivity"
             android:exported="false"
             android:taskAffinity="com.example.adhanscreen"
-            android:launchMode="singleInstance"
+            android:launchMode="singleTask"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
             android:excludeFromRecents="true"
@@ -63,7 +63,7 @@
             android:name=".ui.adhan.DuaVideoActivity"
             android:exported="false"
             android:taskAffinity="com.example.adhanscreen"
-            android:launchMode="singleInstance"
+            android:launchMode="singleTop"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
             android:excludeFromRecents="true"
@@ -80,6 +80,8 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
                 <action android:name="android.intent.action.TIME_SET" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
             </intent-filter>
         </receiver>
 

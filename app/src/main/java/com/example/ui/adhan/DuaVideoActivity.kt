@@ -54,26 +54,42 @@ import java.io.File
 class DuaVideoActivity : ComponentActivity() {
 
     private fun enableImmersiveLandscape() {
-        // Enforce Landscape Orientation
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        // Enforce Landscape Orientation safely
+        try {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
-        // Keep screen on
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        // Hardware Screen Wake Lock for AMOLED displays
+        try {
+            val pm = getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
+            val wakeLock = pm?.newWakeLock(
+                @Suppress("DEPRECATION")
+                android.os.PowerManager.SCREEN_BRIGHT_WAKE_LOCK or
+                        android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP or
+                        android.os.PowerManager.ON_AFTER_RELEASE,
+                "PrayerApp:DuaVideoWake"
+            )
+            wakeLock?.acquire(3000L)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
         // Show when locked
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
-        } else {
-            @Suppress("DEPRECATION")
-            window.addFlags(
-                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
-                        WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
-            )
         }
+        @Suppress("DEPRECATION")
+        window.addFlags(
+            WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+                    WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
+        )
 
-        // Cutout support for edge-to-edge
+        // Cutout support for edge-to-edge on Samsung A30s & Infinity displays
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             window.attributes.layoutInDisplayCutoutMode =
                 WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
@@ -106,43 +122,11 @@ class DuaVideoActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            setShowWhenLocked(true)
-            setTurnScreenOn(true)
-        }
-        @Suppress("DEPRECATION")
-        window.addFlags(
-            WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
-                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-        )
         enableImmersiveLandscape()
 
         val rawPrayerId = intent.getStringExtra("EXTRA_PRAYER_ID") ?: "FAJR"
         val prayerName = intent.getStringExtra("EXTRA_PRAYER_NAME") ?: "الصلاة"
-        var explicitVideoUri = intent.getStringExtra("EXTRA_VIDEO_URI")
-
-        if (explicitVideoUri.isNullOrBlank()) {
-            val s = runCatching {
-                kotlinx.coroutines.runBlocking(Dispatchers.IO) {
-                    PrayerApplication.instance.database.settingsDao().getSettingsDirect()
-                }
-            }.getOrNull()
-
-            explicitVideoUri = when {
-                rawPrayerId == "MAGHRIB" && s?.ramadanCannonEnabled == true && !s.ramadanCannonVideoUri.isNullOrBlank() -> s.ramadanCannonVideoUri
-                rawPrayerId == "MESAHARATY" -> s?.mesaharatyVideoUri
-                else -> when (rawPrayerId) {
-                    "FAJR" -> s?.duaVideoFajr
-                    "DHUHR" -> s?.duaVideoDhuhr
-                    "ASR" -> s?.duaVideoAsr
-                    "MAGHRIB" -> s?.duaVideoMaghrib
-                    "ISHA" -> s?.duaVideoIsha
-                    "JUMUAH" -> s?.duaVideoJumuah
-                    else -> null
-                }
-            }
-        }
+        val explicitVideoUri = intent.getStringExtra("EXTRA_VIDEO_URI")
 
         setContent {
             MyApplicationTheme(darkTheme = true) {
@@ -186,14 +170,35 @@ fun DuaVideoScreen(
         if (s != null) settings = s
     }
 
-    // Determine video URI and validate file existence
-    val videoUri = remember(explicitVideoUri) {
+    // Determine video URI from explicit argument or database settings
+    val resolvedUriString = remember(explicitVideoUri, settings) {
         if (!explicitVideoUri.isNullOrBlank()) {
-            if (explicitVideoUri.startsWith("content://") || explicitVideoUri.startsWith("file://")) {
-                explicitVideoUri
+            explicitVideoUri
+        } else {
+            when {
+                prayerId == "MAGHRIB" && settings.ramadanCannonEnabled && !settings.ramadanCannonVideoUri.isNullOrBlank() -> settings.ramadanCannonVideoUri
+                prayerId == "MESAHARATY" -> settings.mesaharatyVideoUri
+                else -> when (prayerId) {
+                    "FAJR" -> settings.duaVideoFajr
+                    "DHUHR" -> settings.duaVideoDhuhr
+                    "ASR" -> settings.duaVideoAsr
+                    "MAGHRIB" -> settings.duaVideoMaghrib
+                    "ISHA" -> settings.duaVideoIsha
+                    "JUMUAH" -> settings.duaVideoJumuah
+                    else -> null
+                }
+            }
+        }
+    }
+
+    // Determine video URI and validate file existence
+    val videoUri = remember(resolvedUriString) {
+        if (!resolvedUriString.isNullOrBlank()) {
+            if (resolvedUriString.startsWith("content://") || resolvedUriString.startsWith("file://")) {
+                resolvedUriString
             } else {
-                val f = File(explicitVideoUri)
-                if (f.exists()) explicitVideoUri else null
+                val f = File(resolvedUriString)
+                if (f.exists()) resolvedUriString else null
             }
         } else {
             null
@@ -238,31 +243,36 @@ fun DuaVideoScreen(
                     FullScreenVideoView(ctx).apply {
                         this.fillScreen = isFillScreen
                         fullScreenVideoView = this
-                        val uri = if (videoUri.startsWith("content://") || videoUri.startsWith("file://")) {
-                            Uri.parse(videoUri)
-                        } else {
-                            Uri.fromFile(File(videoUri))
-                        }
-                        setVideoURI(uri)
-                        setOnPreparedListener { mp ->
-                            mp.isLooping = false
-                            start()
-                            isPlaying = true
-                        }
-                        setOnCompletionListener {
-                            isPlaying = false
-                            videoEnded = true
-                            isControlsVisible = false
-                            // Automatically close and turn off screen when video ends
-                            postDelayed({
+                        try {
+                            val uri = if (videoUri.startsWith("content://") || videoUri.startsWith("file://")) {
+                                Uri.parse(videoUri)
+                            } else {
+                                Uri.fromFile(File(videoUri))
+                            }
+                            setVideoURI(uri)
+                            setOnPreparedListener { mp ->
+                                mp.isLooping = false
+                                start()
+                                isPlaying = true
+                            }
+                            setOnCompletionListener {
+                                isPlaying = false
+                                videoEnded = true
+                                isControlsVisible = false
+                                // Automatically close and turn off screen when video ends
+                                postDelayed({
+                                    onClose()
+                                }, 500)
+                            }
+                            setOnErrorListener { _, _, _ ->
+                                isPlaying = false
+                                videoEnded = true
                                 onClose()
-                            }, 500)
-                        }
-                        setOnErrorListener { _, _, _ ->
-                            isPlaying = false
-                            videoEnded = true
+                                true
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
                             onClose()
-                            true
                         }
                     }
                 },
@@ -334,7 +344,7 @@ private fun BuiltInCinematicDuaView(
 
     LaunchedEffect(isPlaying) {
         if (isPlaying) {
-            AudioPlayerHelper.playTimeChime()
+            AudioPlayerHelper.playDuaMelody()
             while (progressSeconds < totalSeconds) {
                 delay(1000L)
                 progressSeconds++

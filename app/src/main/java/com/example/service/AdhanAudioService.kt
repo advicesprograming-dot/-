@@ -4,6 +4,8 @@ import android.app.Notification
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.example.PrayerApplication
@@ -29,7 +31,20 @@ class AdhanAudioService : Service() {
             .setContentText("حي على الصلاة • استمع للأذان")
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
-        startForeground(NotificationHelper.NOTIFICATION_ID_SERVICE, notification)
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(
+                    NotificationHelper.NOTIFICATION_ID_SERVICE,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+                )
+            } else {
+                startForeground(NotificationHelper.NOTIFICATION_ID_SERVICE, notification)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
         CoroutineScope(Dispatchers.IO).launch {
             val db = PrayerApplication.instance.database
