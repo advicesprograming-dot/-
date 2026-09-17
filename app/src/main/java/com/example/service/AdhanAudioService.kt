@@ -8,6 +8,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.example.PrayerApplication
 import com.example.data.local.AppSettingsEntity
+import com.example.ui.adhan.AdhanScreenActivity
 import com.example.util.AudioPlayerHelper
 import com.example.util.NotificationHelper
 import kotlinx.coroutines.CoroutineScope
@@ -28,12 +29,18 @@ class AdhanAudioService : Service() {
             .setContentText("حي على الصلاة • استمع للأذان")
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
-
         startForeground(NotificationHelper.NOTIFICATION_ID_SERVICE, notification)
 
         CoroutineScope(Dispatchers.IO).launch {
             val db = PrayerApplication.instance.database
             val settings = db.settingsDao().getSettingsDirect() ?: AppSettingsEntity()
+
+            if (!settings.adhanSoundEnabled) {
+                kotlinx.coroutines.delay(15000L) // Wait 15 seconds then transition
+                AudioPlayerHelper.onAlertCompletedListener?.invoke()
+                stopSelf()
+                return@launch
+            }
 
             // 1. Time Alert Sound (First)
             val preSoundUri = when (prayerId) {
@@ -79,7 +86,7 @@ class AdhanAudioService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        AudioPlayerHelper.stopAudio()
+        // AudioPlayerHelper.stopAudio() // Removed to prevent interrupting Dua audio
     }
 
     companion object {
@@ -100,6 +107,7 @@ class AdhanAudioService : Service() {
         }
 
         fun stop(context: Context) {
+            AudioPlayerHelper.stopAudio()
             val intent = Intent(context, AdhanAudioService::class.java)
             context.stopService(intent)
         }

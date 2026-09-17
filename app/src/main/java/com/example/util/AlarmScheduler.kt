@@ -181,15 +181,32 @@ object AlarmScheduler {
 
     private fun setExactAlarm(alarmManager: AlarmManager, triggerAtMillis: Long, operation: PendingIntent) {
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                val alarmClockInfo = AlarmManager.AlarmClockInfo(triggerAtMillis, operation)
+                alarmManager.setAlarmClock(alarmClockInfo, operation)
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation)
             } else {
                 alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation)
             }
         } catch (e: SecurityException) {
             e.printStackTrace()
-            // Fallback to normal alarm if exact alarm permission restricted
-            alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation)
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation)
+                } else {
+                    alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation)
+                }
+            } catch (ex: Exception) {
+                alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            try {
+                alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation)
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            }
         }
     }
 }

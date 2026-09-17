@@ -96,20 +96,17 @@ class AdhanScreenActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Ensure activity displays specifically over lock screen and turns screen on without launching the main app
+        // Ensure activity displays specifically over lock screen and turns screen on without dismissing the lock screen
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
-        } else {
-            @Suppress("DEPRECATION")
-            window.addFlags(
-                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
-                        WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
-                        WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-            )
         }
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        @Suppress("DEPRECATION")
+        window.addFlags(
+            WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+        )
 
         val rawPrayerId = intent.getStringExtra("EXTRA_PRAYER_ID") ?: "FAJR"
         val rawPrayerName = intent.getStringExtra("EXTRA_PRAYER_NAME") ?: "الصلاة"
@@ -139,21 +136,24 @@ class AdhanScreenActivity : ComponentActivity() {
                     }
                 }
                 val intent = Intent(this@AdhanScreenActivity, DuaVideoActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                     putExtra("EXTRA_PRAYER_ID", rawPrayerId)
                     putExtra("EXTRA_PRAYER_NAME", formattedPrayerName)
                     putExtra("EXTRA_VIDEO_URI", videoUri)
                 }
                 startActivity(intent)
-                finishAndRemoveTask()
+                finish()
             }
         }
 
-        // If pre-alert, listen for audio finish to immediately shut off screen and finish
+        // If pre-alert, allow sufficient time for user to read alert after sound finishes
         if (isAlert) {
             AudioPlayerHelper.onAlertCompletedListener = {
                 runOnUiThread {
-                    closeAndTurnOffScreen()
+                    window.decorView.postDelayed({
+                        if (!isFinishing && !isDestroyed) {
+                            closeAndTurnOffScreen()
+                        }
+                    }, 8000L)
                 }
             }
         } else {
@@ -186,7 +186,7 @@ class AdhanScreenActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         AudioPlayerHelper.onAlertCompletedListener = null
-        AudioPlayerHelper.stopAudio()
+        // AudioPlayerHelper.stopAudio() // Removed to prevent interrupting Dua audio
     }
 }
 
@@ -259,7 +259,7 @@ fun AdhanScreenContent(
             if (AudioPlayerHelper.isPlaying()) {
                 while (true) {
                     if (!AudioPlayerHelper.isPlaying()) {
-                        delay(1000)
+                        delay(6000L) // Stay visible for 6 seconds after sound finishes
                         if (!AudioPlayerHelper.isPlaying()) {
                             break
                         }
@@ -268,7 +268,7 @@ fun AdhanScreenContent(
                 }
                 onDismiss()
             } else {
-                delay(4000L)
+                delay(20000L) // Stay visible for 20 seconds if muted or until user dismisses
                 onDismiss()
             }
         }

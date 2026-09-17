@@ -6,6 +6,7 @@ import android.content.Intent
 import com.example.PrayerApplication
 import com.example.data.local.AppSettingsEntity
 import com.example.service.AdhanAudioService
+import com.example.ui.adhan.AdhanScreenActivity
 import com.example.util.AlarmScheduler
 import com.example.util.AudioPlayerHelper
 import com.example.util.NotificationHelper
@@ -27,14 +28,25 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
                 val prayerId = intent.getStringExtra("EXTRA_PRAYER_ID") ?: "FAJR"
                 val prayerName = intent.getStringExtra("EXTRA_PRAYER_NAME") ?: "الصلاة"
 
+                // Launch Adhan Screen immediately over lockscreen in its own isolated task
+                try {
+                    val screenIntent = Intent(context, AdhanScreenActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)
+                        putExtra("EXTRA_PRAYER_ID", prayerId)
+                        putExtra("EXTRA_PRAYER_NAME", prayerName)
+                        putExtra("EXTRA_IS_ALERT", false)
+                    }
+                    context.startActivity(screenIntent)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+
                 CoroutineScope(Dispatchers.IO).launch {
                     val db = PrayerApplication.instance.database
                     val settings = db.settingsDao().getSettingsDirect() ?: AppSettingsEntity()
 
                     NotificationHelper.showAdhanNotification(context, prayerName, prayerId, settings.ramadanCannonEnabled, settings.ramadanCannonVideoUri)
-                    if (settings.adhanSoundEnabled) {
-                        AdhanAudioService.start(context, prayerId, prayerName)
-                    }
+                    AdhanAudioService.start(context, prayerId, prayerName)
 
                     // Reschedule next prayer times
                     AlarmScheduler.scheduleAll(context)
@@ -53,6 +65,20 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
                     val settings = db.settingsDao().getSettingsDirect() ?: AppSettingsEntity()
 
                     if (settings.preAdhanAlertsEnabled) {
+                        // Launch Alert Screen immediately over lockscreen in its own isolated task
+                        try {
+                            val screenIntent = Intent(context, AdhanScreenActivity::class.java).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)
+                                putExtra("EXTRA_PRAYER_NAME", prayerName)
+                                putExtra("EXTRA_MINUTES_REMAINING", minutesBefore)
+                                putExtra("EXTRA_IS_ALERT", true)
+                                putExtra("EXTRA_RINGTONE_URI", ringtoneUri)
+                            }
+                            context.startActivity(screenIntent)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+
                         NotificationHelper.showAlertNotification(context, prayerName, minutesBefore, ringtoneUri)
                         AudioPlayerHelper.playAudioUri(context, ringtoneUri)
                     }

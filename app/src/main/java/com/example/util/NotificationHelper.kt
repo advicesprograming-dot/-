@@ -122,7 +122,7 @@ object NotificationHelper {
         val fullPrayerName = getFullPrayerName(prayerName)
 
         val screenIntent = Intent(context, AdhanScreenActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
             putExtra("EXTRA_PRAYER_ID", prayerId)
             putExtra("EXTRA_PRAYER_NAME", fullPrayerName)
             putExtra("EXTRA_IS_ALERT", false)
@@ -148,7 +148,7 @@ object NotificationHelper {
 
         if (prayerId == "MAGHRIB" && ramadanCannonEnabled) {
             val cannonIntent = Intent(context, DuaVideoActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
                 putExtra("EXTRA_PRAYER_ID", "MAGHRIB")
                 putExtra("EXTRA_PRAYER_NAME", "مدفع الإفطار")
                 putExtra("EXTRA_VIDEO_URI", cannonVideoUri)
@@ -162,7 +162,7 @@ object NotificationHelper {
             builder.addAction(android.R.drawable.ic_media_play, "💥 عرض مدفع الإفطار", cannonPendingIntent)
         } else {
             val duaIntent = Intent(context, DuaVideoActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
                 putExtra("EXTRA_PRAYER_ID", prayerId)
                 putExtra("EXTRA_PRAYER_NAME", fullPrayerName)
             }
@@ -185,7 +185,7 @@ object NotificationHelper {
     fun showMesaharatyNotification(context: Context, videoUri: String?) {
         val prayerName = "السحور (المسحراتي)"
         val screenIntent = Intent(context, DuaVideoActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
             putExtra("EXTRA_PRAYER_ID", "MESAHARATY")
             putExtra("EXTRA_PRAYER_NAME", prayerName)
             putExtra("EXTRA_VIDEO_URI", videoUri)
@@ -227,7 +227,7 @@ object NotificationHelper {
         val alertText = "يتبقى $minutesRemaining دقيقة على أذان $fullPrayerName"
 
         val screenIntent = Intent(context, AdhanScreenActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
             putExtra("EXTRA_PRAYER_NAME", fullPrayerName)
             putExtra("EXTRA_MINUTES_REMAINING", minutesRemaining)
             putExtra("EXTRA_IS_ALERT", true)

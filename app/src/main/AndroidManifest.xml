@@ -45,25 +45,27 @@
             </intent-filter>
         </activity>
 
-        <!-- Full-screen Adhan & Alert Activity with Lock Screen Support -->
+        <!-- Full-screen Adhan & Alert Activity with Dedicated Task & Lock Screen Support -->
         <activity
             android:name=".ui.adhan.AdhanScreenActivity"
             android:exported="false"
+            android:taskAffinity="com.example.adhanscreen"
+            android:launchMode="singleInstance"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
-            android:showOnLockScreen="true"
             android:excludeFromRecents="true"
-            android:launchMode="singleTask"
             android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:theme="@style/Theme.MyApplication" />
 
         <!-- Horizontal Full-screen Post-Adhan Dua Video Activity -->
         <activity
             android:name=".ui.adhan.DuaVideoActivity"
             android:exported="false"
+            android:taskAffinity="com.example.adhanscreen"
+            android:launchMode="singleInstance"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
-            android:showOnLockScreen="true"
             android:excludeFromRecents="true"
             android:screenOrientation="sensorLandscape"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
