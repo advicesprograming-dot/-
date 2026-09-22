@@ -6,6 +6,8 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Build
+import com.example.PrayerApplication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -19,12 +21,39 @@ object AudioPlayerHelper {
     private var isPlayingAudio = false
     var onAlertCompletedListener: (() -> Unit)? = null
 
+    private fun requestAudioFocus(context: Context) {
+        try {
+            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val focusRequest = android.media.AudioFocusRequest.Builder(android.media.AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+                    .setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_ALARM)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .build()
+                    )
+                    .build()
+                audioManager?.requestAudioFocus(focusRequest)
+            } else {
+                @Suppress("DEPRECATION")
+                audioManager?.requestAudioFocus(
+                    { _ -> },
+                    android.media.AudioManager.STREAM_ALARM,
+                    android.media.AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     fun playAudioUri(
         context: Context,
         uriString: String?,
         onComplete: (() -> Unit)? = null
     ) {
         stopAudio()
+        requestAudioFocus(context)
 
         if (!uriString.isNullOrBlank()) {
             try {
@@ -81,6 +110,9 @@ object AudioPlayerHelper {
 
     fun playTimeChime(onComplete: (() -> Unit)? = null) {
         stopAudio()
+        try {
+            requestAudioFocus(PrayerApplication.instance)
+        } catch (_: Exception) {}
         CoroutineScope(Dispatchers.Default).launch {
             try {
                 val sampleRate = 44100
@@ -222,6 +254,9 @@ object AudioPlayerHelper {
 
     fun playDuaMelody(onComplete: (() -> Unit)? = null) {
         stopAudio()
+        try {
+            requestAudioFocus(PrayerApplication.instance)
+        } catch (_: Exception) {}
         CoroutineScope(Dispatchers.Default).launch {
             try {
                 val sampleRate = 44100
