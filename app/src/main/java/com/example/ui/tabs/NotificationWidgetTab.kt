@@ -8,6 +8,7 @@ import android.content.Intent
 import android.os.Build
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -127,6 +128,46 @@ fun NotificationWidgetTab(
                     text = AppStrings.get("notif_widget_desc", lang),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        // Redmi / Xiaomi MIUI Battery & Alarm Optimization Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3CD).copy(alpha = 0.4f)),
+            border = BorderStroke(1.dp, Color(0xFFD39E00).copy(alpha = 0.5f))
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Smartphone, contentDescription = null, tint = Color(0xFFB8860B), modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "⚠️ إرشادات خاصة لهواتف Redmi و Xiaomi (Redmi Note 8)",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF856404)
+                    )
+                }
+                Text(
+                    text = "لضمان عمل مواعيد الصلاة والأذان بدقة تامة بالثانية وعدم تأخرها على هاتف Redmi Note 8 بسبب نظام MIUI، يرجى تفعيل الآتي:",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "1. **التشغيل التلقائي (Autostart)**: اذهب إلى إعدادات الهاتف > التطبيقات > صلاتي > تفعيل (التشغيل التلقائي).",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "2. **إلغاء قيود البطارية**: اذهب إلى إعدادات البطارية للتطبيق واجعله على وضع **(بلا قيود - No restrictions)** لكي لا يغلقه النظام في الخلفية.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "3. **قفل التطبيق في قائمة التطبيقات المفتوحة**: اسحب التطبيق لأسفل في قائمة التطبيقات الحديثة (Recent Apps) لتظهر علامة القفل.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
