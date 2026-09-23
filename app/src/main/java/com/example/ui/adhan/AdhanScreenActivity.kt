@@ -254,12 +254,27 @@ fun AdhanScreenContent(
         }
     }
 
-    // Auto-detect when Adhan audio finishes or fallback timeout
+    // Auto-detect when Adhan audio finishes to immediately transition to Dua video
     LaunchedEffect(isAlert) {
         if (!isAlert) {
-            // Fallback timeout for Adhan: 4 minutes max if audio state is ambiguous, otherwise AdhanAudioService listener triggers onPlayDuaVideo()
-            delay(240000L)
-            onPlayDuaVideo()
+            // 1. Wait for audio to start playing (up to 3 seconds)
+            var waitCount = 0
+            while (!AudioPlayerHelper.isPlaying() && waitCount < 30) {
+                delay(100)
+                waitCount++
+            }
+            // 2. Monitor audio until it finishes playing completely
+            if (AudioPlayerHelper.isPlaying()) {
+                while (AudioPlayerHelper.isPlaying()) {
+                    delay(250)
+                }
+                delay(200) // Small buffer
+                onPlayDuaVideo()
+            } else {
+                // Fallback if audio was muted or didn't start: wait 30 seconds then transition to Dua video
+                delay(30000L)
+                onPlayDuaVideo()
+            }
         } else {
             // Pre-adhan alert: monitor audio state until audio finishes playing completely, or max 60 seconds
             var waitCount = 0
